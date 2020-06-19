@@ -26,6 +26,8 @@ sapply(load_lib, require, character=TRUE)
 # 05. EXTRACTITR: Extract imputated data set after performing MICE 
 # ============================================================================= #
 
+
+Sys.setenv(LANG = 'en')
 SRC <- 'C:/Users/YDS/Desktop/R/SemCom/SemCon/Source/secom_mod.SAV'
 # SRC <- 'C:/Users/unnat/Desktop/YDS/YS_SEMCON/Source/secom_mod.SAV'
 TRAIN_TEST_RATIO <- 0.80
