@@ -404,9 +404,38 @@ missing_value_analysis(train_FR_boruta_pca, 'train set after BORUTA')
 # 01. Random Forest
 # ============================================================================= #
 
+train <- cbind(factor(class), train_FR_boruta_knn)
+
+myControl <- trainControl(
+  method = "cv", 
+  number = 10,
+  summaryFunction = twoClassSummary,
+  classProbs = TRUE, # IMPORTANT!
+  verboseIter = TRUE
+)
+
 set.seed(333)
-#rf_all <- randomForest(class ~ ., data = )
-rf_model <- randomForest(class ~ ., data = train_FR_boruta_knn)
-rf_prob <- predict(rf_model, train_FR_boruta_knn)
-rf_pred = ifelse(rf_prob > 0.5, 1, 0)
-confusionMatrix(table(rf_pred, semcon_train_data$class))
+model <- train(class ~ ., data = train, method = 'ranger', tuneLength = 10,
+               trControl = myControl)
+plot(model)
+p <- predict(model, train, type = 'response')
+p_class = ifelse(p > 0.5, 1, 0)
+confusionMatrix(table(p_class, train[['class']]))
+colAUC(p, train[['class']], plotROC = TRUE)
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL - WIP (DO NOT RUN)
+# 02. Logistics Regression
+# ============================================================================= #
+
+
+model <- glm(class ~ ., family = binomial(link = 'logit'), train,  trControl = myControl)
+p <- predict(model, train, type = 'response')
+summary(p)
+p_class = ifelse(p > 0.5, 1, 0)
+confusionMatrix(table(p_class, train[['class']]))
+#p <- predict(model, test, type = 'response')
+###########################################
+colAUC(p, train[['class']], plotROC = TRUE)
+###########################################
