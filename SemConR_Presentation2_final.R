@@ -9,9 +9,12 @@
 # 07. randomForest
 # 08. ggplot2
 # 09. pacman
+# 10. caTools
+# 11. party
+# 12. earth
 # ============================================================================= #
 
-load_lib <- c('grDevices', 'foreign', 'caret', 'DMwR', 'mice', 'Boruta', 'randomForest', 'ggplot2', 'pacman', 'missMDA')
+load_lib <- c('grDevices', 'foreign', 'caret', 'DMwR', 'mice', 'Boruta', 'randomForest', 'ggplot2', 'pacman', 'missMDA', 'caTools', 'party', 'earth', 'ROSE', 'kernlab')
 install_lib <- load_lib[!load_lib %in% installed.packages()]
 for(lib in install_lib) install.packages(lib, dependencies=TRUE)
 sapply(load_lib, require, character=TRUE)
@@ -26,14 +29,10 @@ sapply(load_lib, require, character=TRUE)
 # 05. EXTRACTITR: Extract imputated data set after performing MICE 
 # ============================================================================= #
 
-
-Sys.setenv(LANG = 'en')
-SRC <- 'C:/Users/YDS/Desktop/R/SemCom/SemCon/Source/secom_mod.SAV'
-# SRC <- 'C:/Users/unnat/Desktop/YDS/YS_SEMCON/Source/secom_mod.SAV'
-TRAIN_TEST_RATIO <- 0.80
+SRC <- 'C:/Users/unnat/Desktop/YDS/YS_SEMCON/Source/secom_mod.SAV'
+TGT <- "C:/Users/unnat/Desktop/YDS/YS_SEMCON/Target/"
+TRAIN_TEST_RATIO <- 0.8
 NULL_THRESHOLD <- 0.6
-# MAXITR <- 15
-# EXTRACTITR <- 15
 
 
 # ============================================================================= #
@@ -59,8 +58,6 @@ NULL_THRESHOLD <- 0.6
 
 write_csv <- function(df, filename){
   # Function to write df as filename at the below directory
-  dir <- "C:/Users/YDS/Desktop/R/SemCom/SemCon/IntermediateFiles"
-  # dir <- "C:/Users/unnat/Desktop/YDS/YS_SEMCON"
   file <- paste(dir, filename, sep = "/")
   write.csv(df, file)
 }
@@ -146,7 +143,7 @@ variance_feature_removal <- function(df) {
   #		uniqueCut: the cutoff for the percentage of distinct values out of the number of total samples (Default is 10)
   # 3. Ratio of frequency of most common value to frequency of the second most common value is large
   #		freqCut: the cutoff for the ratio of the most common value to the second most common value (Default is 19)
-  df <- train_null_removal[-nearZeroVar(df)] 
+  df <- df[-nearZeroVar(df)]
   return(df)
 }
 
@@ -180,25 +177,25 @@ KNN_imputation <- function(df) {
   return(impute_KNN)
 }
 
-mice_imputation <- function(df, itr = 5, extract = 5){
-  # Function to impute missing values(NAs) using MICE, default 5 iterations and extract data after completion of 5th iteration
-  impute_mice <- mice(df, m = itr, method = 'pmm', seed = 500)
-  summary(impute_mice)
-  mice_imputate <- complete(impute_mice, extract)
-  return(mice_imputate)
-}
+# mice_imputation <- function(df, itr = 5, extract = 5){
+#   # Function to impute missing values(NAs) using MICE, default 5 iterations and extract data after completion of 5th iteration
+#   impute_mice <- mice(df, m = itr, method = 'pmm', seed = 500)
+#   summary(impute_mice)
+#   mice_imputate <- complete(impute_mice, extract)
+#   return(mice_imputate)
+# }
 
-PCA_Analysis <- function(df) {
-  # Function to check the PCs using Scree Plot and Kaiser-Guttman Rule.
-  pca <- prcomp(df, center = TRUE, scale. = TRUE)
-  pca_var <- pca$sdev ^ 2
-  pca_var_per <- round(pca_var * 100 / sum(pca_var) , 2)
-  plot(1:length(pca_var), pca_var, type="b", col='blue', ylab="Eigenvalue", xlab="Component Number", main = 'Scree Plot') 
-  abline(h = 1,lty = 2,col = "red")
-  message('Principal components as per Kaiser-Guttman rule: ', length(pca_var[pca_var >= 1]))
-  plot(1:length(pca_var_per), pca_var_per, type="b", col='red', ylab="Proportion of Variance Explained", xlab="Component Number", main = 'Variance Explained by Components')
-  message('Total Variance explained by 118 PCs: ', sum(pca_var_per[1:length(pca_var[pca_var >= 1])]))
-}
+# PCA_Analysis <- function(df) {
+#   # Function to check the PCs using Scree Plot and Kaiser-Guttman Rule.
+#   pca <- prcomp(df, center = TRUE, scale. = TRUE)
+#   pca_var <- pca$sdev ^ 2
+#   pca_var_per <- round(pca_var * 100 / sum(pca_var) , 2)
+#   plot(1:length(pca_var), pca_var, type="b", col='blue', ylab="Eigenvalue", xlab="Component Number", main = 'Scree Plot') 
+#   abline(h = 1,lty = 2,col = "red")
+#   message('Principal components as per Kaiser-Guttman rule: ', length(pca_var[pca_var >= 1]))
+#   plot(1:length(pca_var_per), pca_var_per, type="b", col='red', ylab="Proportion of Variance Explained", xlab="Component Number", main = 'Variance Explained by Components')
+#   message('Total Variance explained by 118 PCs: ', sum(pca_var_per[1:length(pca_var[pca_var >= 1])]))
+# }
 
 selection_boruta <- function(df, class){
   # Function to perform feature selection using BORUTA
@@ -222,16 +219,10 @@ selection_boruta <- function(df, class){
 
 
 # ============================================================================= #
-# READING SOURCE DATA
+# READING SOURCE DATA & DATA ANALYSIS
 # ============================================================================= #
 
 semcon_original_data <- read_sav(SRC)
-
-
-# ============================================================================= #
-# SOURCE DATA ANALYSIS
-# ============================================================================= #
-
 analyse_data(semcon_original_data)
 semcon_original_data <- semcon_original_data[, -c(1, 3)]
 class_distribution(semcon_original_data, 'Given Sample')
@@ -262,7 +253,7 @@ outlier_analysis(semcon_train_data[, -c(1)], 'Train Data')
 # TEST DATA ANALYSIS
 # ============================================================================= #
 
-class_distribution(semcon_train_data, 'Test Data')
+class_distribution(semcon_test_data, 'Test Data')
 missing_value_analysis(semcon_test_data, 'Test Data')
 outlier_analysis(semcon_test_data[, -c(1)], 'Test Data')
 # write_csv(semcon_test_data, "semcon_test_data.csv")
@@ -273,7 +264,7 @@ outlier_analysis(semcon_test_data[, -c(1)], 'Test Data')
 # 01. Remove Features with more than 60% NA based on missing_value_analysis
 # ============================================================================= #
 
-class <- semcon_train_data$class
+class <- as.factor(semcon_train_data$class)
 train_null_removal <- null_feature_removal(semcon_train_data[, -c(1)], NULL_THRESHOLD)
 missing_value_analysis(train_null_removal, paste('Train Data after removing features with more than', NULL_THRESHOLD * 100, '% NA'))
 outlier_analysis(train_null_removal, paste('train set after removing features with more than', NULL_THRESHOLD * 100, '% NA'))
@@ -289,6 +280,19 @@ train_variance_removal <- variance_feature_removal(train_null_removal)
 missing_value_analysis(train_variance_removal, 'train set after removing features with Near Zero Variance')
 outlier_analysis(train_variance_removal, 'train set after removing features with Near Zero Variance')
 # write_csv(cbind(class, train_variance_removal), "train_NZV_removal.csv")
+
+
+# ============================================================================= #
+# FEATURE REDUCTION (WIP)
+# 03. Highly correlated features Removal (corr < 0.99)
+# ============================================================================= #
+
+# corr <- cor(train_variance_removal, use = "pairwise.complete.obs")
+# highCor <- c(findCorrelation(corr, names = TRUE, cutoff = 0.99))
+# train_highcorr_removal <- train_variance_removal[ , -which(names(train_variance_removal) %in% c(highCor))]
+# missing_value_analysis(train_highcorr_removal, 'train set after removing Highly Correlated features')
+# outlier_analysis(train_highcorr_removal, 'train set after removing highly correlated features')
+# write_csv(cbind(class, train_highcorr_removal), "train_HC_removal.csv")
 
 
 # ============================================================================= #
@@ -320,8 +324,8 @@ outlier_analysis(train_outlier_NA, 'train set after imputating outlier with NA')
 # 01. mean imputation
 # ============================================================================= #
 
-train_mean_imputation <- mean_imputation(train_outlier_NA)
-missing_value_analysis(train_mean_imputation, 'train set after mean imputation')
+# train_mean_imputation <- mean_imputation(train_outlier_NA)
+# missing_value_analysis(train_mean_imputation, 'train set after mean imputation')
 # outlier_analysis(train_mean_imputation, 'train set after mean imputation')
 # write_csv(cbind(class, train_mean_imputation), "train_NAH_mean.csv")
 
@@ -341,8 +345,7 @@ missing_value_analysis(train_knn_imputation, 'train set after KNN imputation')
 # NA HANDLING
 # 03. MICE - DO NOT RUN, 
 # 	Time consuming (5-7 hours for 5 iterations, 15 hours for 15 iterations)
-#	NA reduced from 11183 to 121 after 5 iterations
-#	
+#	NA reduced from 11183 to 121 after 5 iterations	
 # ============================================================================= #
 
 # train_mice_imputation <- mice_imputation(train_outlier_NA, MAXITR, EXTRACTITR)
@@ -358,17 +361,30 @@ missing_value_analysis(train_knn_imputation, 'train set after KNN imputation')
 #	iterativePCA algorithm
 # ============================================================================= #
 
-nPCs <- estim_ncpPCA(train_outlier_NA, method.cv = "Kfold", verbose = FALSE)
-res_comp <- imputePCA(train_outlier_NA, ncp = nPCs$ncp)
-train_NAH_pca <- as.data.frame(res_comp$completeObs)
+# nPCs <- estim_ncpPCA(train_outlier_NA, method.cv = "Kfold", verbose = FALSE)
+# res_comp <- imputePCA(train_outlier_NA, ncp = nPCs$ncp)
+# train_NAH_pca <- as.data.frame(res_comp$completeObs)
+
+
+# ============================================================================= #
+# NA HANDLING
+# 05. Bagged Tree
+# ============================================================================= #
+
+# bagImpute <- preProcess(train_outlier_NA, method="bagImpute", verbose = TRUE)
+# train_bag_Impute <- predict(bagImpute, newdata = train_outlier_NA)
+# missing_value_analysis(train_bag_Impute, 'train set after Bagged Tree imputation')
+# outlier_analysis(train_bag_Impute, 'train set after Bagged Tree imputation')
+# write_csv(cbind(class, train_knn_imputation), "train_NAH_knn.csv")
+
 
 # ============================================================================= #
 # FEATURE SELECTION AND REDUCTION
 # 01. PCA
 # ============================================================================= #
 
-PCA_Analysis(train_knn_imputation)
-PCA_Analysis(train_NAH_pca)
+# PCA_Analysis(train_knn_imputation)
+# PCA_Analysis(train_NAH_pca)
 
 
 # ============================================================================= #
@@ -391,53 +407,240 @@ missing_value_analysis(train_FR_boruta_knn, 'train set after BORUTA')
 # 02. BORUTA on PCA imputed train set
 # ============================================================================= #
 
-train_FR_boruta_pca <- selection_boruta(train_NAH_pca, class)
-print("Summary of selected features")
-summary(train_FR_boruta_pca)
-message("Variance corresponding to selected features:")
-sapply(train_FR_boruta_pca, var)
-missing_value_analysis(train_FR_boruta_pca, 'train set after BORUTA')
+# train_FR_boruta_pca <- selection_boruta(train_NAH_pca, class)
+# print("Summary of selected features")
+# summary(train_FR_boruta_pca)
+# message("Variance corresponding to selected features:")
+# sapply(train_FR_boruta_pca, var)
+# missing_value_analysis(train_FR_boruta_pca, 'train set after BORUTA')
 # outlier_analysis(train_FR_boruta_pca, 'train set after BORUTA')
 # write_csv(cbind(train_FR_boruta_pca), "train_FR_boruta.csv")
 
 
 # ============================================================================= #
-# CLASSIFICATION MODEL - WIP (DO NOT RUN)
-# 01. Random Forest
+# FEATURE SELECTION AND REDUCTION
+# 03. BORUTA on Bag Tree imputed train set
 # ============================================================================= #
 
-train <- cbind(factor(class), train_FR_boruta_knn)
-
-myControl <- trainControl(
-  method = "cv", 
-  number = 10,
-  summaryFunction = twoClassSummary,
-  classProbs = TRUE, # IMPORTANT!
-  verboseIter = TRUE
-)
-
-set.seed(333)
-model <- train(class ~ ., data = train, method = 'ranger', tuneLength = 10,
-               trControl = myControl)
-plot(model)
-p <- predict(model, train, type = 'response')
-p_class = ifelse(p > 0.5, 1, 0)
-confusionMatrix(table(p_class, train[['class']]))
-colAUC(p, train[['class']], plotROC = TRUE)
+# train_FR_boruta_bt <- selection_boruta(train_bag_Impute, class)
+# print("Summary of selected features")
+# summary(train_FR_boruta_bt)
+# message("Variance corresponding to selected features:")
+# sapply(train_FR_boruta_bt, var)
+# missing_value_analysis(train_FR_boruta_bt, 'train set after BORUTA')
+# outlier_analysis(train_FR_boruta_knn, 'train set after BORUTA')
+# write_csv(cbind(train_FR_boruta_knn), "train_FR_boruta.csv")
 
 
 # ============================================================================= #
-# CLASSIFICATION MODEL - WIP (DO NOT RUN)
-# 02. Logistics Regression
+# FEATURE SELECTION AND REDUCTION
+# 04. Recursive Feature Elimination (RFE)
 # ============================================================================= #
 
+# set.seed(199)
+# options(warn = -1)
+# subsets <- c(15:25)
+# ctrl <- rfeControl(functions = rfFuncs, method = 'repeatedcv', repeats = 5, verbose = TRUE)
+# lmProfile <- rfe(x = train_knn_imputation, y = class, sizes = subsets, rfeControl = ctrl)
+# lmProfile
 
-model <- glm(class ~ ., family = binomial(link = 'logit'), train,  trControl = myControl)
-p <- predict(model, train, type = 'response')
-summary(p)
-p_class = ifelse(p > 0.5, 1, 0)
-confusionMatrix(table(p_class, train[['class']]))
-#p <- predict(model, test, type = 'response')
-###########################################
-colAUC(p, train[['class']], plotROC = TRUE)
-###########################################
+# train <- cbind(class, train_knn_imputation[ , which(names(train_knn_imputation) %in% c(lmProfile[["optVariables"]][1:20]))])
+# test <- semcon_test_data[ , which(names(semcon_test_data) %in% c(names(train)))]
+
+
+# ============================================================================= #
+# FINAL TRAIN DATASET
+# ============================================================================= #
+
+train <- cbind(class, train_FR_boruta_knn)
+
+
+# ============================================================================= #
+# PREPROCESS: TEST DATASET
+# 01. KNN Imputation
+# ============================================================================= #
+
+test <- semcon_test_data[ , which(names(semcon_test_data) %in% c(names(train)))]
+class_distribution(test, 'Test Sample')
+missing_value_analysis(test, 'Test Sample')
+outlier_analysis(test, 'Test Sample')
+test <- KNN_imputation(test)
+missing_value_analysis(test, 'Test set after KNN imputation')
+
+
+# ============================================================================= #
+# PREPROCESS: TEST DATASET
+# 02. Bag Tree Imputation
+# ============================================================================= #
+
+# bagImpute <- preProcess(test, method="bagImpute")
+# test <- predict(bagImpute, newdata = test)
+# missing_value_analysis(test, 'Test set after KNN imputation')
+
+# ============================================================================= #
+# SAMPLING TECHNIQUES
+# 01. CV
+# 02. Bootstrap
+# 03. K-Fold CV
+# 04. Undersampling
+# 05. Oversampling
+# 06. ROSE
+# 07. SMOTE
+# ============================================================================= #
+
+ctrl <- trainControl(method = 'repeatedcv', number = 10, repeats = 10)
+# ctrl <- trainControl(method = "cv", number = 5, savePredictions = 'final',  summaryFunction = twoClassSummary)
+# ctrl <- trainControl(method = "boot632", number = 1000, savePredictions = TRUE, savePredictions = 'final', classProbs = T, summaryFunction = twoClassSummary)
+# ctrl <- trainControl(method = "repeatedcv", number = 5, savePredictions = TRUE, savePredictions = 'final', classProbs = T, summaryFunction = twoClassSummary)
+ctrl_under <- trainControl(method = 'repeatedcv', number = 10, repeats = 10, verboseIter = FALSE, sampling = 'down')
+ctrl_over <- trainControl(method = 'repeatedcv', number = 10, repeats = 10, verboseIter = FALSE, sampling = 'up')
+ctrl_rose <- trainControl(method = 'repeatedcv', number = 10, repeats = 10, verboseIter = FALSE, sampling = 'rose')
+ctrl_smote <- trainControl(method = 'repeatedcv', number = 10, repeats = 10, verboseIter = FALSE, sampling = 'smote')
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL
+# 01. Generalized Linear Model
+# ============================================================================= #
+
+set.seed(892)
+model_glm <- train(form = class ~ ., data = train, family = binomial(link = 'logit'), trControl = ctrl, method = 'glm')
+#exp(coef(model_glm$finalModel))
+#varImp(model_glm)
+prob_glm_class = predict(model_glm, newdata = test, type = 'prob')
+pred_glm_class = predict(model_glm, newdata = test)
+confusionMatrix(table(pred_glm_class, test[['class']]), positive = '1', mode = 'everything')
+colAUC(prob_glm_class, test[['class']], plotROC = TRUE)
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL
+# 02. Decision Tree - ctree, chaid, C5.0, xgbTree
+# ============================================================================= #
+
+set.seed(892)
+model_dt <- train(form = class ~ ., data = train, method = 'ctree', tuneLength = 5, trControl = ctrl)
+plot(model_dt)
+prob_dt_class <- predict(model_dt, newdata = test, type = 'prob')
+pred_dt_class = predict(model_dt, newdata = test)
+confusionMatrix(table(pred_dt_class, test[['class']]), positive = '1', mode = 'everything')
+colAUC(prob_dt_class, test[['class']], plotROC = TRUE)
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL
+# 03. Random Forest - ranger, rf
+# ============================================================================= #
+
+set.seed(892)
+model_rf <- train(form = class ~ ., data = train, method = 'ranger', tuneLength = 5, trControl = ctrl)
+plot(model_rf)
+#prob_rf_class <- predict(model_rf, newdata = test, type = 'prob')
+pred_rf_class = predict(model_rf, newdata = test)
+confusionMatrix(table(pred_rf_class, test[['class']]), positive = '1', mode = 'everything')
+# colAUC(prob_rf_class, train[['class']], plotROC = TRUE)
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL
+# 04. KNN
+# ============================================================================= #
+
+model_knn <- train(form = class ~ ., data = train, method = 'knn', tuneLength = 5, trControl = ctrl)
+plot(model_knn)
+prob_knn_class <- predict(model_knn, newdata = test, type = 'prob')
+pred_knn_class = predict(model_knn, newdata = test)
+confusionMatrix(table(pred_knn_class, test[['class']]), positive = '1', mode = 'everything')
+colAUC(prob_knn_class, test[['class']], plotROC = TRUE)
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL
+# 05. Naive Bayes
+# ============================================================================= #
+
+model_nb <- train(form = class ~ ., data = train, method = 'naive_bayes', tuneLength = 5, trControl = ctrl)
+plot(model_nb)
+prob_nb_class <- predict(model_nb, newdata = test, type = 'prob')
+pred_nb_class = predict(model_nb, newdata = test)
+confusionMatrix(table(pred_nb_class, test[['class']]), positive = '1', mode = 'everything')
+colAUC(prob_nb_class, test[['class']], plotROC = TRUE)
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL
+# 06. Multivariate Adaptive Regression Splines (MARS)
+# ============================================================================= #
+
+set.seed(40)
+model_mars <- train(form = class ~ ., data = train, method = 'earth', tuneLength = 5, trControl = ctrl)
+plot(model_mars)
+prob_mars_class <- predict(model_mars, newdata = test, type = 'prob')
+pred_mars_class = predict(model_mars, newdata = test)
+confusionMatrix(table(pred_mars_class, test[['class']]), positive = '1', mode = 'everything')
+colAUC(prob_mars_class, test[['class']], plotROC = TRUE)
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL
+# 07. Neural Network: Penalized Multinomial Regression
+# ============================================================================= #
+
+model_nn <- train(form = class ~ ., data = train, method = 'multinom', tuneLength = 5, trControl = ctrl)
+plot(model_nn)
+prob_nn_class <- predict(model_nn, newdata = test, type = 'prob')
+pred_nn_class = predict(model_nn, newdata = test)
+confusionMatrix(table(pred_nn_class, test[['class']]), positive = '1', mode = 'everything')
+colAUC(prob_nn_class, test[['class']], plotROC = TRUE)
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL
+# 08. SVM
+# ============================================================================= #
+
+model_svm <- train(form = class ~ ., data = train, method = 'svmRadial', tuneLength = 5, trControl = ctrl)
+plot(model_svm)
+prob_svm_class <- predict(model_svm, newdata = test, type = 'prob')
+pred_svm_class = predict(model_svm, newdata = test)
+confusionMatrix(table(pred_svm_class, test[['class']]), positive = '1', mode = 'everything')
+colAUC(prob_svm_class, test[['class']], plotROC = TRUE)
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL
+# 09. Adaboost
+# ============================================================================= #
+
+model_adb <- train(form = class ~ ., data = train, method = 'adaboost', tuneLength = 5, trControl = ctrl)
+plot(model_adb)
+prob_adb_class <- predict(model_adb, newdata = test, type = 'prob')
+pred_adb_class = predict(model_adb, newdata = test)
+confusionMatrix(table(pred_adb_class, test[['class']]), positive = '1', mode = 'everything')
+colAUC(prob_adb_class, test[['class']], plotROC = TRUE)
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL
+# 10. xgBoost Dart
+# ============================================================================= #
+
+model_xgb <- train(form = class ~ ., data = train, method = 'xgbDART', tuneLength = 5, trControl = ctrl)
+plot(model_xgb)
+prob_xgb_class <- predict(model_xgb, newdata = test, type = 'prob')
+pred_xgb_class = predict(model_xgb, newdata = test)
+confusionMatrix(table(pred_xgb_class, test[['class']]), positive = '1', mode = 'everything')
+colAUC(prob_xgb_class, test[['class']], plotROC = TRUE)
+
+
+# ============================================================================= #
+# MODEL COMPARISON
+# ============================================================================= #
+
+# Compare model performances using resample()
+models_compare <- resamples(list(GLM = model_glm, DT = model_dt, RF = model_rf, KNN = model_knn, NB = model_nb, MARS = model_mars, NN = model_nn, SVM = model_svm, ADABOOST = model_adb))
+# Summary of the models performances
+summary(models_compare)
+# Draw box plots to compare models
+scales <- list(x=list(relation="free"), y=list(relation="free"))
+bwplot(models_compare, scales=scales)
