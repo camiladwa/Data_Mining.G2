@@ -428,22 +428,36 @@ print(table(smote_train_data$class))
 
 # ============================================================================= #
 # PREPROCESS: TEST DATASET
-# 01. KNN Imputation
+# 01.
+#   - 431 Features (Currently implemented)
+#         Consider those features which were ignored in train after NA, variance and Near Zero Variance
+#         getting 431 features in train after NA, zero and near zero variance removal
+#         considering these 431 features in test for KNN imputation
+#   - 16 features
+#         Consider important features after Boruta
+#         considering these 16 features in test for KNN imputation
+# 02. KNN Imputation
 # ============================================================================= #
 
 test_variance_removal <- semcon_test_data[ , which(names(semcon_test_data) %in% c(names(train_variance_removal)))]
+#test <- semcon_test_data[ , which(names(semcon_test_data) %in% c(names(imba_train_data)))]
 #class_distribution(test_variance_removal, 'Test Sample after near zero variance removal')
 missing_value_analysis(test_variance_removal, 'Test Sample after near zero variance removal')
 outlier_analysis(test_variance_removal, 'Test Sample after near zero variance removal')
+
 test_knn_imputation <- KNN_imputation(test_variance_removal, train_knn_imputation)
 missing_value_analysis(test_knn_imputation, 'Test Sample after KNN Imputation')
 outlier_analysis(test_knn_imputation, 'Test Sample after KNN Imputation')
 class <- semcon_test_data$class
 test <- cbind(class, test_knn_imputation)
-#test <- semcon_test_data[ , which(names(semcon_test_data) %in% c(names(train)))]
 class_distribution(test, 'Test Sample')
 missing_value_analysis(test, 'Test Sample')
 outlier_analysis(test[, -c(1)], 'Test Sample')
+
+
+# test_outlier_NA <- impute_outlier_NA(semcon_test_data[, -c(1)])
+# test_variance <- semcon_test_data[ , which(names(test_outlier_NA) %in% c(names(train_variance_removal)))]
+# test_knn <- KNN_imputation(test_variance, train_knn_imputation)
 
 
 # ============================================================================= #
@@ -463,7 +477,7 @@ outlier_analysis(test[, -c(1)], 'Test Sample')
 # ============================================================================= #
 
 ctrl_noTune <- trainControl(method = 'none', classProbs = TRUE, summaryFunction = twoClassSummary)
-ctrl_tune <- trainControl(method = 'optimism_boot', number = 1000, classProbs = TRUE, summaryFunction = twoClassSummary)
+ctrl_tune <- trainControl(method = 'boot', number = 1000, classProbs = TRUE, summaryFunction = twoClassSummary)
 # ctrl <- trainControl(method = "cv", number = 10, savePredictions = 'final',  summaryFunction = twoClassSummary)
 # ctrl <- trainControl(method = "boot632", number = 1000, savePredictions = TRUE, savePredictions = 'final', classProbs = T, summaryFunction = twoClassSummary)
 # ctrl <- trainControl(method = "repeatedcv", number = 10, savePredictions = TRUE, savePredictions = 'final', classProbs = T, summaryFunction = twoClassSummary)
@@ -711,7 +725,7 @@ print(roc_dt_smote)
 
 set.seed(642)
 # Model Creation
-model_rf_imba <- train(form = class ~ ., data = imba_train_data, method = 'ranger', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+model_rf_imba <- train(form = class ~ ., data = imba_train_data, method = 'rf', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
 # plot(model_rf_imba)
 # Train Evaluation
 # # prob_rf_class_imba <- predict(model_rf_imba, newdata = imba_train_data, type = 'prob')
@@ -727,7 +741,7 @@ print(roc_rf_imba)
 
 set.seed(642)
 # Model Creation
-model_rf_under <- train(form = class ~ ., data = under_train_data, method = 'ranger', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+model_rf_under <- train(form = class ~ ., data = under_train_data, method = 'rf', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
 # plot(model_rf_under)
 # Train Evaluation
 # pred_rf_class_under = predict(model_rf_under, newdata = under_train_data)
@@ -742,7 +756,7 @@ print(roc_rf_under)
 
 set.seed(642)
 # Model Creation
-model_rf_over <- train(form = class ~ ., data = over_train_data, method = 'ranger', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+model_rf_over <- train(form = class ~ ., data = over_train_data, method = 'rf', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
 # plot(model_rf_over)
 # Train Evaluation
 # pred_rf_class_over = predict(model_rf_over, newdata = over_train_data)
@@ -757,7 +771,7 @@ print(roc_rf_over)
 
 set.seed(642)
 # Model Creation
-model_rf_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'ctree', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+model_rf_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'rf', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
 # plot(model_rf_ovun)
 # Train Evaluation
 # pred_rf_class_ovun = predict(model_rf_ovun, newdata = ovun_train_data)
@@ -772,7 +786,7 @@ print(roc_rf_ovun)
 
 set.seed(642)
 # Model Creation
-model_rf_rose <- train(form = class ~ ., data = rose_train_data, method = 'ranger', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+model_rf_rose <- train(form = class ~ ., data = rose_train_data, method = 'rf', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
 # plot(model_rf_rose)
 # Train Evaluation
 # pred_rf_class_rose = predict(model_rf_rose, newdata = rose_train_data)
@@ -787,7 +801,7 @@ print(roc_rf_rose)
 
 set.seed(642)
 # Model Creation
-model_rf_smote <- train(form = class ~ ., data = smote_train_data, method = 'ranger', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+model_rf_smote <- train(form = class ~ ., data = smote_train_data, method = 'rf', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
 # plot(model_rf_smote)
 # # Train Evaluation
 # pred_rf_class_smote = predict(model_rf_smote, newdata = smote_train_data)
@@ -1383,7 +1397,7 @@ print(roc_dt_smote)
 
 
 # Model Creation
-model_rf_imba <- train(form = class ~ ., data = imba_train_data, method = 'ranger', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+model_rf_imba <- train(form = class ~ ., data = imba_train_data, method = 'rf', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
 plot(model_rf_imba)
 # Train Evaluation
 # # prob_rf_class_imba <- predict(model_rf_imba, newdata = imba_train_data, type = 'prob')
@@ -1399,7 +1413,7 @@ print(roc_rf_imba)
 
 
 # Model Creation
-model_rf_under <- train(form = class ~ ., data = under_train_data, method = 'ranger', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+model_rf_under <- train(form = class ~ ., data = under_train_data, method = 'rf', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
 plot(model_rf_under)
 # Train Evaluation
 # pred_rf_class_under = predict(model_rf_under, newdata = under_train_data)
@@ -1414,7 +1428,7 @@ print(roc_rf_under)
 
 
 # Model Creation
-model_rf_over <- train(form = class ~ ., data = over_train_data, method = 'ranger', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+model_rf_over <- train(form = class ~ ., data = over_train_data, method = 'rf', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
 plot(model_rf_over)
 # Train Evaluation
 # pred_rf_class_over = predict(model_rf_over, newdata = over_train_data)
@@ -1429,7 +1443,7 @@ print(roc_rf_over)
 
 
 # Model Creation
-model_rf_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'ctree', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+model_rf_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'rf', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
 plot(model_rf_ovun)
 # Train Evaluation
 # pred_rf_class_ovun = predict(model_rf_ovun, newdata = ovun_train_data)
@@ -1444,7 +1458,7 @@ print(roc_rf_ovun)
 
 
 # Model Creation
-model_rf_rose <- train(form = class ~ ., data = rose_train_data, method = 'ranger', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+model_rf_rose <- train(form = class ~ ., data = rose_train_data, method = 'rf', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
 plot(model_rf_rose)
 # Train Evaluation
 # pred_rf_class_rose = predict(model_rf_rose, newdata = rose_train_data)
@@ -1459,7 +1473,7 @@ print(roc_rf_rose)
 
 
 # Model Creation
-model_rf_smote <- train(form = class ~ ., data = smote_train_data, method = 'ranger', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+model_rf_smote <- train(form = class ~ ., data = smote_train_data, method = 'rf', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
 plot(model_rf_smote)
 # # Train Evaluation
 # pred_rf_class_smote = predict(model_rf_smote, newdata = smote_train_data)
