@@ -26,8 +26,6 @@ sapply(load_lib, require, character=TRUE)
 # 01. SRC: Source file location with file name
 # 02. TRAIN_TEST_RATIO: Ratio to split the sample into train and test data set
 # 03. NULL_THRESHOLD: Remove Features with more than a certain percentage of NA
-# 04. MAXITR: Maximum number of iterations to perform for MICE
-# 05. EXTRACTITR: Extract imputated data set after performing MICE 
 # ============================================================================= #
 
 SRC <- 'C:/Users/unnat/Desktop/YDS/YS_SEMCON/Source/secom_mod.SAV'
@@ -174,8 +172,6 @@ mean_imputation <- function(df) {
 KNN_imputation <- function(df, train_df=NULL) {
   # Function to impute missing values(NAs) using K-Nearest Neighbour (k = 5)
   impute_KNN <- knnImputation(df, k = 5, scale = T, meth = "weighAvg", distData = train_df)
-  #KNNImpute <- preProcess(df, method="knnImpute", )
-  #impute_KNN <- predict(KNNImpute, newdata = df)
   return(impute_KNN)
 }
 
@@ -186,25 +182,25 @@ BAG_imputation <- function(df) {
   return(impute_BAG)
 }
 
-# mice_imputation <- function(df, itr = 5, extract = 5){
-#   # Function to impute missing values(NAs) using MICE, default 5 iterations and extract data after completion of 5th iteration
-#   impute_mice <- mice(df, m = itr, method = 'pmm', seed = 500)
-#   summary(impute_mice)
-#   mice_imputate <- complete(impute_mice, extract)
-#   return(mice_imputate)
-# }
+mice_imputation <- function(df, itr = 5, extract = 5){
+  # Function to impute missing values(NAs) using MICE, default 5 iterations and extract data after completion of 5th iteration
+  impute_mice <- mice(df, m = itr, method = 'pmm', seed = 500)
+  summary(impute_mice)
+  mice_imputate <- complete(impute_mice, extract)
+  return(mice_imputate)
+}
 
-# PCA_Analysis <- function(df) {
-#   # Function to check the PCs using Scree Plot and Kaiser-Guttman Rule.
-#   pca <- prcomp(df, center = TRUE, scale. = TRUE)
-#   pca_var <- pca$sdev ^ 2
-#   pca_var_per <- round(pca_var * 100 / sum(pca_var) , 2)
-#   plot(1:length(pca_var), pca_var, type="b", col='blue', ylab="Eigenvalue", xlab="Component Number", main = 'Scree Plot') 
-#   abline(h = 1,lty = 2,col = "red")
-#   message('Principal components as per Kaiser-Guttman rule: ', length(pca_var[pca_var >= 1]))
-#   plot(1:length(pca_var_per), pca_var_per, type="b", col='red', ylab="Proportion of Variance Explained", xlab="Component Number", main = 'Variance Explained by Components')
-#   message('Total Variance explained by 118 PCs: ', sum(pca_var_per[1:length(pca_var[pca_var >= 1])]))
-# }
+PCA_Analysis <- function(df) {
+  # Function to check the PCs using Scree Plot and Kaiser-Guttman Rule.
+  pca <- prcomp(df, center = TRUE, scale. = TRUE)
+  pca_var <- pca$sdev ^ 2
+  pca_var_per <- round(pca_var * 100 / sum(pca_var) , 2)
+  plot(1:length(pca_var), pca_var, type="b", col='blue', ylab="Eigenvalue", xlab="Component Number", main = 'Scree Plot')
+  abline(h = 1,lty = 2,col = "red")
+  message('Principal components as per Kaiser-Guttman rule: ', length(pca_var[pca_var >= 1]))
+  plot(1:length(pca_var_per), pca_var_per, type="b", col='red', ylab="Proportion of Variance Explained", xlab="Component Number", main = 'Variance Explained by Components')
+  message('Total Variance explained by 118 PCs: ', sum(pca_var_per[1:length(pca_var[pca_var >= 1])]))
+}
 
 selection_boruta <- function(df, class){
   # Function to perform feature selection using BORUTA
@@ -295,19 +291,6 @@ outlier_analysis(train_variance_removal, 'train set after removing features with
 
 
 # ============================================================================= #
-# FEATURE REDUCTION (WIP)
-# 03. Highly correlated features Removal (corr < 0.99)
-# ============================================================================= #
-
-# corr <- cor(train_variance_removal, use = "pairwise.complete.obs")
-# highCor <- c(findCorrelation(corr, names = TRUE, cutoff = 0.99))
-# train_highcorr_removal <- train_variance_removal[ , -which(names(train_variance_removal) %in% c(highCor))]
-# missing_value_analysis(train_highcorr_removal, 'train set after removing Highly Correlated features')
-# outlier_analysis(train_highcorr_removal, 'train set after removing highly correlated features')
-# write_csv(cbind(class, train_highcorr_removal), "train_HC_removal.csv")
-
-
-# ============================================================================= #
 # OUTLIER HANDLING
 # 01. Replace by 3s boundary
 # ============================================================================= #
@@ -355,47 +338,13 @@ missing_value_analysis(train_knn_imputation, 'train set after KNN imputation')
 
 # ============================================================================= #
 # NA HANDLING
-# 03. MICE - DO NOT RUN, 
-# 	Time consuming (5-7 hours for 5 iterations, 15 hours for 15 iterations)
-#	NA reduced from 11183 to 121 after 5 iterations	
-# ============================================================================= #
-
-# train_mice_imputation <- mice_imputation(train_outlier_NA, MAXITR, EXTRACTITR)
-# missing_value_analysis(train_mice_imputation, 'train set after MICE imputation')
-# outlier_analysis(train_mice_imputation, 'train set after MICE imputation')
-# write_csv(cbind(class, train_mice_imputation), "train_NAH_mice.csv")
-
-
-# ============================================================================= #
-# NA HANDLING
-# 04. PCA
-#	estimate the number of components from incomplete data
-#	iterativePCA algorithm
-# ============================================================================= #
-
-# nPCs <- estim_ncpPCA(train_outlier_NA, method.cv = "Kfold", verbose = FALSE)
-# res_comp <- imputePCA(train_outlier_NA, ncp = nPCs$ncp)
-# train_NAH_pca <- as.data.frame(res_comp$completeObs)
-
-
-# ============================================================================= #
-# NA HANDLING
-# 05. Bagged Tree
+# 03. Bagged Tree
 # ============================================================================= #
 
 # train_bag_Imputation <- BAG_imputation(train_outlier_NA)
 # missing_value_analysis(train_bag_Imputation, 'train set after Bagged Tree imputation')
 # outlier_analysis(train_bag_Imputation, 'train set after Bagged Tree imputation')
 # write_csv(cbind(class, train_bag_Imputation), "train_NAH_bt.csv")
-
-
-# ============================================================================= #
-# FEATURE SELECTION AND REDUCTION
-# 01. PCA
-# ============================================================================= #
-
-# PCA_Analysis(train_knn_imputation)
-# PCA_Analysis(train_NAH_pca)
 
 
 # ============================================================================= #
@@ -416,22 +365,7 @@ missing_value_analysis(train_FR_boruta_knn, 'train set after BORUTA')
 
 # ============================================================================= #
 # FEATURE SELECTION AND REDUCTION
-# 02. BORUTA on PCA imputed train set
-# ============================================================================= #
-
-# train_FR_boruta_pca <- selection_boruta(train_NAH_pca, class)
-# print("Summary of selected features")
-# summary(train_FR_boruta_pca)
-# message("Variance corresponding to selected features:")
-# sapply(train_FR_boruta_pca, var)
-# missing_value_analysis(train_FR_boruta_pca, 'train set after BORUTA')
-# outlier_analysis(train_FR_boruta_pca, 'train set after BORUTA')
-# write_csv(cbind(train_FR_boruta_pca), "train_FR_boruta.csv")
-
-
-# ============================================================================= #
-# FEATURE SELECTION AND REDUCTION
-# 03. BORUTA on Bag Tree imputed train set
+# 02. BORUTA on Bag Tree imputed train set
 # ============================================================================= #
 
 # train_FR_boruta_bt <- selection_boruta(train_bag_Imputation, class)
@@ -446,7 +380,7 @@ missing_value_analysis(train_FR_boruta_knn, 'train set after BORUTA')
 
 # ============================================================================= #
 # FEATURE SELECTION AND REDUCTION
-# 04. Recursive Feature Elimination (RFE)
+# 03. Recursive Feature Elimination (RFE)
 # ============================================================================= #
 
 # set.seed(199)
@@ -464,29 +398,66 @@ missing_value_analysis(train_FR_boruta_knn, 'train set after BORUTA')
 
 # ============================================================================= #
 # FINAL TRAIN DATASET
+# 01. Imbalanced
+# 02. Under-sampled
+# 03. Over-sampled
+# 04. Mixed-sampled
+# 05. ROSE
+# 06. SMOTE
 # ============================================================================= #
 
-train <- cbind(class, train_FR_boruta_knn)
+imba_train_data <- cbind(class, train_FR_boruta_knn)
+print(table(imba_train_data$class))
+# F: 71, NF: 1182
+under_train_data <- ovun.sample(class ~., data = imba_train_data, method = 'under', seed = 222, N = 142)$data
+print(table(under_train_data$class))
+# F: 71, NF: 71
+over_train_data <- ovun.sample(class ~., data = imba_train_data, method = 'over', seed = 222, N = 2364)$data
+print(table(over_train_data$class))
+# F: 1182, NF: 1182
+ovun_train_data <- ovun.sample(class ~., data = imba_train_data, method = 'both', p = 0.5, seed = 222, N = 1253)$data
+print(table(ovun_train_data$class))
+# F: 623, NF: 630
+rose_train_data <- ROSE(class ~., data = imba_train_data, seed = 222)$data
+print(table(rose_train_data$class))
+# F: 623, NF: 630
+smote_train_data <- SMOTE(class ~., data = imba_train_data, perc.over = 500, perc.under = 250)
+print(table(smote_train_data$class))
+# F: 426, NF: 887
 
 
 # ============================================================================= #
 # PREPROCESS: TEST DATASET
-# 01. KNN Imputation
+# 01.
+#   - 431 Features (Currently implemented)
+#         Consider those features which were ignored in train after NA, variance and Near Zero Variance
+#         getting 431 features in train after NA, zero and near zero variance removal
+#         considering these 431 features in test for KNN imputation
+#   - 16 features
+#         Consider important features after Boruta
+#         considering these 16 features in test for KNN imputation
+# 02. KNN Imputation
 # ============================================================================= #
 
 test_variance_removal <- semcon_test_data[ , which(names(semcon_test_data) %in% c(names(train_variance_removal)))]
-class_distribution(test_variance_removal, 'Test Sample after near zero variance removal')
+#test <- semcon_test_data[ , which(names(semcon_test_data) %in% c(names(imba_train_data)))]
+#class_distribution(test_variance_removal, 'Test Sample after near zero variance removal')
 missing_value_analysis(test_variance_removal, 'Test Sample after near zero variance removal')
 outlier_analysis(test_variance_removal, 'Test Sample after near zero variance removal')
+
 test_knn_imputation <- KNN_imputation(test_variance_removal, train_knn_imputation)
 missing_value_analysis(test_knn_imputation, 'Test Sample after KNN Imputation')
 outlier_analysis(test_knn_imputation, 'Test Sample after KNN Imputation')
 class <- semcon_test_data$class
 test <- cbind(class, test_knn_imputation)
-#test <- semcon_test_data[ , which(names(semcon_test_data) %in% c(names(train)))]
 class_distribution(test, 'Test Sample')
 missing_value_analysis(test, 'Test Sample')
-outlier_analysis(test, 'Test Sample')
+outlier_analysis(test[, -c(1)], 'Test Sample')
+
+
+# test_outlier_NA <- impute_outlier_NA(semcon_test_data[, -c(1)])
+# test_variance <- semcon_test_data[ , which(names(test_outlier_NA) %in% c(names(train_variance_removal)))]
+# test_knn <- KNN_imputation(test_variance, train_knn_imputation)
 
 
 # ============================================================================= #
@@ -503,25 +474,21 @@ outlier_analysis(test, 'Test Sample')
 # 01. CV
 # 02. Bootstrap
 # 03. K-Fold CV
-# 04. Undersampling
-# 05. Oversampling
-# 06. ROSE
-# 07. SMOTE
 # ============================================================================= #
 
-ctrl <- trainControl(method = 'repeatedcv', number = 10, classProbs = TRUE, summaryFunction = twoClassSummary)
+ctrl_noTune <- trainControl(method = 'none', classProbs = TRUE, summaryFunction = twoClassSummary)
+ctrl_tune <- trainControl(method = 'boot', number = 1000, classProbs = TRUE, summaryFunction = twoClassSummary)
 # ctrl <- trainControl(method = "cv", number = 10, savePredictions = 'final',  summaryFunction = twoClassSummary)
 # ctrl <- trainControl(method = "boot632", number = 1000, savePredictions = TRUE, savePredictions = 'final', classProbs = T, summaryFunction = twoClassSummary)
 # ctrl <- trainControl(method = "repeatedcv", number = 10, savePredictions = TRUE, savePredictions = 'final', classProbs = T, summaryFunction = twoClassSummary)
-ctrl_under <- trainControl(method = 'repeatedcv', number = 10, verboseIter = FALSE, sampling = 'down')
-ctrl_over <- trainControl(method = 'repeatedcv', number = 10, verboseIter = FALSE, sampling = 'up')
-ctrl_rose <- trainControl(method = 'repeatedcv', number = 10, verboseIter = FALSE, sampling = 'rose')
-ctrl_smote <- trainControl(method = 'repeatedcv', number = 10, verboseIter = FALSE, sampling = 'smote')
+# ctrl_under <- trainControl(method = 'repeatedcv', number = 10, verboseIter = FALSE, sampling = 'down')
+# ctrl_over <- trainControl(method = 'repeatedcv', number = 10, verboseIter = FALSE, sampling = 'up')
+# ctrl_rose <- trainControl(method = 'repeatedcv', number = 10, verboseIter = FALSE, sampling = 'rose')
+# ctrl_smote <- trainControl(method = 'repeatedcv', number = 10, verboseIter = FALSE, sampling = 'smote')
 
-ovun_train_data <- ovun.sample(class ~., data = train, method = 'both', p = 0.5, seed = 222, N = 1253)$data
 
 # ============================================================================= #
-# CLASSIFICATION MODEL
+# CLASSIFICATION MODEL WITHOUT TUNE
 # 01. Generalized Linear Model
 #	A. Imbalanced Dataset
 #	B. Undersampling
@@ -533,101 +500,101 @@ ovun_train_data <- ovun.sample(class ~., data = train, method = 'both', p = 0.5,
 
 set.seed(642)
 # Model Creation
-model_glm <- train(form = class ~ ., data = train, family = binomial(link = 'logit'), trControl = ctrl, method = 'glm', preProcess = c("center", "scale"))
-#exp(coef(model_glm$finalModel))
-#varImp(model_glm)
+model_glm_imba <- train(form = class ~ ., data = imba_train_data, family = binomial(link = 'logit'), trControl = ctrl_noTune, method = 'glm', preProcess = c("center", "scale"), metric = 'ROC')
+#exp(coef(model_glm_imba$finalModel))
+#varImp(model_glm_imba)
 # Train Evaluation
-prob_glm_class = predict(model_glm, newdata = train, type = 'prob')
-pred_glm_class = predict(model_glm, newdata = train)
-confusionMatrix(table(pred_glm_class, train$class), positive = 'F', mode = 'everything')
-roc_glm <- roc.curve(pred_glm_class, train[['class']], plotit = T, main = 'ROC Curve using GLM')
-print(roc_glm)
+# prob_glm_class_imba = predict(model_glm_imba, newdata = imba_train_data, type = 'prob')
+# pred_glm_class_imba = predict(model_glm_imba, newdata = imba_train_data)
+# confusionMatrix(as.factor(pred_glm_class_imba), as.factor(imba_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_glm_imba <- roc.curve(pred_glm_class_imba, imba_train_data[['class']], plotit = T, main = 'ROC Curve using GLM')
+# print(roc_glm_imba)
 # Test Evaluation
-# prob_glm_class = predict(model_glm, newdata = test, type = 'prob')
-# pred_glm_class = predict(model_glm, newdata = test)
-# confusionMatrix(table(pred_glm_class, test$class), positive = 'F', mode = 'everything')
-# roc_glm <- roc.curve(pred_glm_class, test[['class']], plotit = T, main = 'ROC Curve using GLM')
-# print(roc_glm)
+prob_glm_class_imba = predict(model_glm_imba, newdata = test, type = 'prob')
+pred_glm_class_imba = predict(model_glm_imba, newdata = test)
+confusionMatrix(as.factor(pred_glm_class_imba), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_glm_imba <- roc.curve(pred_glm_class_imba, test[['class']], plotit = T, main = 'ROC Curve using GLM')
+print(roc_glm_imba)
 
 set.seed(642)
 # Model Creation
-model_glm_under <- train(form = class ~ ., data = train, family = binomial(link = 'logit'), trControl = ctrl_under, method = 'glm', preProcess = c("center", "scale"))
+model_glm_under <- train(form = class ~ ., data = under_train_data, family = binomial(link = 'logit'), trControl = ctrl_noTune, method = 'glm', preProcess = c("center", "scale"), metric = 'ROC')
 # Train Evaluation
-prob_glm_class_under = predict(model_glm_under, newdata = train, type = 'prob')
-pred_glm_class_under = predict(model_glm_under, newdata = train)
-confusionMatrix(table(pred_glm_class_under, train[['class']]), positive = 'F', mode = 'everything')
-roc_glm_under <- roc.curve(pred_glm_class_under, train[['class']], plotit = T, main = 'ROC Curve using GLM & Undersmaple')
-print(roc_glm_under)
-# Test Evaluation
-# prob_glm_class_under = predict(model_glm_under, newdata = test, type = 'prob')
-# pred_glm_class_under = predict(model_glm_under, newdata = test)
-# confusionMatrix(table(pred_glm_class_under, test[['class']]), positive = 'F', mode = 'everything')
-# roc_glm_under <- roc.curve(pred_glm_class_under, test[['class']], plotit = T, main = 'ROC Curve using GLM & Undersmaple')
+# prob_glm_class_under = predict(model_glm_under, newdata = under_train_data, type = 'prob')
+# pred_glm_class_under = predict(model_glm_under, newdata = under_train_data)
+# confusionMatrix(as.factor(pred_glm_class_under), as.factor(under_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_glm_under <- roc.curve(pred_glm_class_under, under_train_data[['class']], plotit = T, main = 'ROC Curve using GLM & Undersmaple')
 # print(roc_glm_under)
-
-set.seed(642)
-# Model Creation
-model_glm_over <- train(form = class ~ ., data = train, family = binomial(link = 'logit'), trControl = ctrl_over, method = 'glm', preProcess = c("center", "scale"))
-# Train Evaluation
-prob_glm_class_over = predict(model_glm_over, newdata = train, type = 'prob')
-pred_glm_class_over = predict(model_glm_over, newdata = train)
-confusionMatrix(table(pred_glm_class_over, train[['class']]), positive = 'F', mode = 'everything')
-roc_glm_over <- roc.curve(pred_glm_class_over, train[['class']], plotit = T, main = 'ROC Curve using GLM & Oversmaple')
-print(roc_glm_over)
 # Test Evaluation
-# prob_glm_class_over = predict(model_glm_over, newdata = test, type = 'prob')
-# pred_glm_class_over = predict(model_glm_over, newdata = test)
-# confusionMatrix(table(pred_glm_class_over, test[['class']]), positive = 'F', mode = 'everything')
-# roc_glm_over <- roc.curve(pred_glm_class_over, test[['class']], plotit = T, main = 'ROC Curve using GLM & Oversmaple')
-# print(roc_glm_over)
-
-set.seed(642)
-# Model Creation
-model_glm_ovun <- train(form = class ~ ., data = ovun_train_data, family = binomial(link = 'logit'), trControl = ctrl, method = 'glm', preProcess = c("center", "scale"))
-# Train Evaluation
-prob_glm_class_ovun = predict(model_glm_ovun, newdata = train, type = 'prob')
-pred_glm_class_ovun = predict(model_glm_ovun, newdata = train)
-confusionMatrix(as.factor(pred_glm_class_ovun), as.factor(train[['class']]), positive = 'F', mode = 'everything')
-roc_glm_under <- roc.curve(pred_glm_class_ovun, train[['class']], plotit = T, main = 'ROC Curve using GLM & Miexed-smaple')
+prob_glm_class_under = predict(model_glm_under, newdata = test, type = 'prob')
+pred_glm_class_under = predict(model_glm_under, newdata = test)
+confusionMatrix(as.factor(pred_glm_class_under), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_glm_under <- roc.curve(pred_glm_class_under, test[['class']], plotit = T, main = 'ROC Curve using GLM & Undersmaple')
 print(roc_glm_under)
-# Test Evaluation
-# prob_glm_class_ovun = predict(model_glm_ovun, newdata = test, type = 'prob')
-# pred_glm_class_ovun = predict(model_glm_ovun, newdata = test)
-# confusionMatrix(as.factor(pred_glm_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
-# roc_glm_ovun <- roc.curve(pred_glm_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using GLM & Miexed-smaple')
-# print(roc_glm_ovun)
 
 set.seed(642)
 # Model Creation
-model_glm_rose <- train(form = class ~ ., data = train, family = binomial(link = 'logit'), trControl = ctrl_rose, method = 'glm', preProcess = c("center", "scale"))
+model_glm_over <- train(form = class ~ ., data = over_train_data, family = binomial(link = 'logit'), trControl = ctrl_noTune, method = 'glm', preProcess = c("center", "scale"), metric = 'ROC')
 # Train Evaluation
-prob_glm_class_rose = predict(model_glm_rose, newdata = train, type = 'prob')
-pred_glm_class_rose = predict(model_glm_rose, newdata = train)
-confusionMatrix(table(pred_glm_class_rose, train[['class']]), positive = 'F', mode = 'everything')
-roc_glm_rose <- roc.curve(pred_glm_class_rose, train[['class']], plotit = T, main = 'ROC Curve using GLM & ROSE')
-print(roc_glm_rose)
+# prob_glm_class_over = predict(model_glm_over, newdata = over_train_data, type = 'prob')
+# pred_glm_class_over = predict(model_glm_over, newdata = over_train_data)
+# confusionMatrix(as.factor(pred_glm_class_over), as.factor(over_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_glm_over <- roc.curve(pred_glm_class_over, over_train_data[['class']], plotit = T, main = 'ROC Curve using GLM & Oversmaple')
+# print(roc_glm_over)
 # Test Evaluation
-# prob_glm_class_rose = predict(model_glm_rose, newdata = test, type = 'prob')
-# pred_glm_class_rose = predict(model_glm_rose, newdata = test)
-# confusionMatrix(table(pred_glm_class_rose, test[['class']]), positive = 'F', mode = 'everything')
-# roc_glm_rose <- roc.curve(pred_glm_class_rose, test[['class']], plotit = T, main = 'ROC Curve using GLM & ROSE')
+prob_glm_class_over = predict(model_glm_over, newdata = test, type = 'prob')
+pred_glm_class_over = predict(model_glm_over, newdata = test)
+confusionMatrix(as.factor(pred_glm_class_over), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_glm_over <- roc.curve(pred_glm_class_over, test[['class']], plotit = T, main = 'ROC Curve using GLM & Oversmaple')
+print(roc_glm_over)
+
+set.seed(642)
+# Model Creation
+model_glm_ovun <- train(form = class ~ ., data = ovun_train_data, family = binomial(link = 'logit'), trControl = ctrl_noTune, method = 'glm', preProcess = c("center", "scale"), metric = 'ROC')
+# Train Evaluation
+# prob_glm_class_ovun = predict(model_glm_ovun, newdata = ovun_train_data, type = 'prob')
+# pred_glm_class_ovun = predict(model_glm_ovun, newdata = ovun_train_data)
+# confusionMatrix(as.factor(pred_glm_class_ovun), as.factor(ovun_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_glm_under <- roc.curve(pred_glm_class_ovun, ovun_train_data[['class']], plotit = T, main = 'ROC Curve using GLM & Miexed-smaple')
+# print(roc_glm_under)
+# Test Evaluation
+prob_glm_class_ovun = predict(model_glm_ovun, newdata = test, type = 'prob')
+pred_glm_class_ovun = predict(model_glm_ovun, newdata = test)
+confusionMatrix(as.factor(pred_glm_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_glm_ovun <- roc.curve(pred_glm_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using GLM & Miexed-smaple')
+print(roc_glm_ovun)
+
+set.seed(642)
+# Model Creation
+model_glm_rose <- train(form = class ~ ., data = rose_train_data, family = binomial(link = 'logit'), trControl = ctrl_noTune, method = 'glm', preProcess = c("center", "scale"), metric = 'ROC')
+# Train Evaluation
+# prob_glm_class_rose = predict(model_glm_rose, newdata = rose_train_data, type = 'prob')
+# pred_glm_class_rose = predict(model_glm_rose, newdata = rose_train_data)
+# confusionMatrix(as.factor(pred_glm_class_rose), as.factor(rose_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_glm_rose <- roc.curve(pred_glm_class_rose, rose_train_data[['class']], plotit = T, main = 'ROC Curve using GLM & ROSE')
 # print(roc_glm_rose)
+# Test Evaluation
+prob_glm_class_rose = predict(model_glm_rose, newdata = test, type = 'prob')
+pred_glm_class_rose = predict(model_glm_rose, newdata = test)
+confusionMatrix(as.factor(pred_glm_class_rose), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_glm_rose <- roc.curve(pred_glm_class_rose, test[['class']], plotit = T, main = 'ROC Curve using GLM & ROSE')
+print(roc_glm_rose)
 
 set.seed(642)
 # Model Creation
-model_glm_smote <- train(form = class ~ ., data = train, family = binomial(link = 'logit'), trControl = ctrl_smote, method = 'glm', preProcess = c("center", "scale"))
+model_glm_smote <- train(form = class ~ ., data = smote_train_data, family = binomial(link = 'logit'), trControl = ctrl_noTune, method = 'glm', preProcess = c("center", "scale"), metric = 'ROC')
 # Train Evaluation
-prob_glm_class_smote = predict(model_glm_smote, newdata = train, type = 'prob')
-pred_glm_class_smote = predict(model_glm_smote, newdata = train)
-confusionMatrix(table(pred_glm_class_smote, train[['class']]), positive = 'F', mode = 'everything')
-roc_glm_smote <- roc.curve(pred_glm_class_smote, train[['class']], plotit = T, main = 'ROC Curve using GLM & SMOTE')
-print(roc_glm_smote)
-# Test Evaluation
-# prob_glm_class_smote = predict(model_glm_smote, newdata = test, type = 'prob')
-# pred_glm_class_smote = predict(model_glm_smote, newdata = test)
-# confusionMatrix(table(pred_glm_class_smote, test[['class']]), positive = 'F', mode = 'everything')
-# roc_glm_smote <- roc.curve(pred_glm_class_smote, test[['class']], plotit = T, main = 'ROC Curve using GLM & SMOTE')
+# prob_glm_class_smote = predict(model_glm_smote, newdata = smote_train_data, type = 'prob')
+# pred_glm_class_smote = predict(model_glm_smote, newdata = smote_train_data)
+# confusionMatrix(as.factor(pred_glm_class_smote), as.factor(smote_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_glm_smote <- roc.curve(pred_glm_class_smote, smote_train_data[['class']], plotit = T, main = 'ROC Curve using GLM & SMOTE')
 # print(roc_glm_smote)
+# Test Evaluation
+prob_glm_class_smote = predict(model_glm_smote, newdata = test, type = 'prob')
+pred_glm_class_smote = predict(model_glm_smote, newdata = test)
+confusionMatrix(as.factor(pred_glm_class_smote), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_glm_smote <- roc.curve(pred_glm_class_smote, test[['class']], plotit = T, main = 'ROC Curve using GLM & SMOTE')
+print(roc_glm_smote)
 
 
 # ============================================================================= #
@@ -643,106 +610,106 @@ print(roc_glm_smote)
 
 set.seed(642)
 # Model Creation
-model_dt <- train(form = class ~ ., data = train, method = 'ctree', tuneLength = 5, trControl = ctrl, preProcess = c("center", "scale"))
-plot(model_dt)
+model_dt_imba <- train(form = class ~ ., data = imba_train_data, method = 'ctree', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_dt_imba)
 # Train Evaluation
-prob_dt_class <- predict(model_dt, newdata = train, type = 'prob')
-pred_dt_class = predict(model_dt, newdata = train)
-confusionMatrix(table(pred_dt_class, train[['class']]), positive = 'F', mode = 'everything')
-roc_dt <- roc.curve(pred_dt_class, train[['class']], plotit = T, main = 'ROC Curve using DT')
-print(roc_dt)
+# prob_dt_class_imba <- predict(model_dt_imba, newdata = imba_train_data, type = 'prob')
+# pred_dt_class_imba = predict(model_dt_imba, newdata = imba_train_data)
+# confusionMatrix(as.factor(pred_dt_class_imba), as.factor(imba_train_data[['class']]), positive = 'F', mode = 'everything')
+# # Error in ROC Calculation
+# roc_dt_imba <- roc.curve(pred_dt_class_imba, imba_train_data[['class']], plotit = T, main = 'ROC Curve using DT')
+# print(roc_dt_imba)
 # Test Evaluation
-# prob_dt_class <- predict(model_dt, newdata = test, type = 'prob')
-# pred_dt_class = predict(model_dt, newdata = test)
-# confusionMatrix(table(pred_dt_class, test[['class']]), positive = 'F', mode = 'everything')
-# roc_dt <- roc.curve(pred_dt_class, test[['class']], plotit = T, main = 'ROC Curve using DT')
-# print(roc_dt)
+prob_dt_class_imba <- predict(model_dt_imba, newdata = test, type = 'prob')
+pred_dt_class_imba = predict(model_dt_imba, newdata = test)
+confusionMatrix(as.factor(pred_dt_class_imba), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_dt_imba <- roc.curve(pred_dt_class_imba, test[['class']], plotit = T, main = 'ROC Curve using DT')
+print(roc_dt_imba)
 
 set.seed(642)
 # Model Creation
-model_dt_under <- train(form = class ~ ., data = train, method = 'ctree', tuneLength = 5, trControl = ctrl_under, preProcess = c("center", "scale"))
-plot(model_dt_under)
-# Train Evaluation
-prob_dt_class_under <- predict(model_dt_under, newdata = train, type = 'prob')
-pred_dt_class_under = predict(model_dt_under, newdata = train)
-confusionMatrix(table(pred_dt_class_under, train[['class']]), positive = 'F', mode = 'everything')
-roc_dt_under <- roc.curve(pred_dt_class_under, train[['class']], plotit = T, main = 'ROC Curve using DT & undersample')
-print(roc_dt_under)
-# Test Evaluation
+model_dt_under <- train(form = class ~ ., data = under_train_data, method = 'ctree', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
 # plot(model_dt_under)
-# prob_dt_class_under <- predict(model_dt_under, newdata = test, type = 'prob')
-# pred_dt_class_under = predict(model_dt_under, newdata = test)
-# confusionMatrix(table(pred_dt_class_under, test[['class']]), positive = 'F', mode = 'everything')
-# roc_dt_under <- roc.curve(pred_dt_class_under, test[['class']], plotit = T, main = 'ROC Curve using DT & undersample')
+# Train Evaluation
+# prob_dt_class_under <- predict(model_dt_under, newdata = under_train_data, type = 'prob')
+# pred_dt_class_under = predict(model_dt_under, newdata = under_train_data)
+# confusionMatrix(as.factor(pred_dt_class_under), as.factor(under_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_dt_under <- roc.curve(pred_dt_class_under, under_train_data[['class']], plotit = T, main = 'ROC Curve using DT & undersample')
 # print(roc_dt_under)
-
-set.seed(642)
-# Model Creation
-model_dt_over <- train(form = class ~ ., data = train, method = 'ctree', tuneLength = 5, trControl = ctrl_over, preProcess = c("center", "scale"))
-plot(model_dt_over)
-# Train Evaluation
-prob_dt_class_over <- predict(model_dt_over, newdata = train, type = 'prob')
-pred_dt_class_over = predict(model_dt_over, newdata = train)
-confusionMatrix(table(pred_dt_class_over, train[['class']]), positive = 'F', mode = 'everything')
-roc_dt_under <- roc.curve(pred_dt_class_under, train[['class']], plotit = T, main = 'ROC Curve using DT & oversample')
+# Test Evaluation
+prob_dt_class_under <- predict(model_dt_under, newdata = test, type = 'prob')
+pred_dt_class_under = predict(model_dt_under, newdata = test)
+confusionMatrix(as.factor(pred_dt_class_under), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_dt_under <- roc.curve(pred_dt_class_under, test[['class']], plotit = T, main = 'ROC Curve using DT & undersample')
 print(roc_dt_under)
-# Test Evaluation
-# prob_dt_class_over <- predict(model_dt_over, newdata = test, type = 'prob')
-# pred_dt_class_over = predict(model_dt_over, newdata = test)
-# confusionMatrix(table(pred_dt_class_over, test[['class']]), positive = 'F', mode = 'everything')
-# roc_dt_over <- roc.curve(pred_dt_class_over, test[['class']], plotit = T, main = 'ROC Curve using DT & oversampling')
+
+set.seed(642)
+# Model Creation
+model_dt_over <- train(form = class ~ ., data = over_train_data, method = 'ctree', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_dt_over)
+# Train Evaluation
+# prob_dt_class_over <- predict(model_dt_over, newdata = over_train_data, type = 'prob')
+# pred_dt_class_over = predict(model_dt_over, newdata = over_train_data)
+# confusionMatrix(as.factor(pred_dt_class_over), as.factor(over_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_dt_over <- roc.curve(pred_dt_class_over, over_train_data[['class']], plotit = T, main = 'ROC Curve using DT & oversample')
 # print(roc_dt_over)
+# Test Evaluation
+prob_dt_class_over <- predict(model_dt_over, newdata = test, type = 'prob')
+pred_dt_class_over = predict(model_dt_over, newdata = test)
+confusionMatrix(as.factor(pred_dt_class_over), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_dt_over <- roc.curve(pred_dt_class_over, test[['class']], plotit = T, main = 'ROC Curve using DT & oversampling')
+print(roc_dt_over)
 
 set.seed(642)
 # Model Creation
-model_dt_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'ctree', tuneLength = 5, trControl = ctrl, preProcess = c("center", "scale"))
-plot(model_dt_ovun)
+model_dt_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'ctree', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_dt_ovun)
 # Train Evaluation
-prob_dt_class_ovun <- predict(model_dt_ovun, newdata = train, type = 'prob')
-pred_dt_class_ovun = predict(model_dt_ovun, newdata = train)
-confusionMatrix(as.factor(pred_dt_class_ovun), as.factor(train[['class']]), positive = 'F', mode = 'everything')
-roc_dt_ovun <- roc.curve(pred_dt_class_ovun, train[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
-print(roc_dt_ovun)
-# Test Evaluation
-# prob_dt_class_ovun <- predict(model_dt_ovun, newdata = test, type = 'prob')
-# pred_dt_class_ovun = predict(model_dt_ovun, newdata = test)
-# confusionMatrix(as.factor(pred_dt_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
-# roc_dt_ovun <- roc.curve(pred_dt_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+# prob_dt_class_ovun <- predict(model_dt_ovun, newdata = ovun_train_data, type = 'prob')
+# pred_dt_class_ovun = predict(model_dt_ovun, newdata = ovun_train_data)
+# confusionMatrix(as.factor(pred_dt_class_ovun), as.factor(ovun_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_dt_ovun <- roc.curve(pred_dt_class_ovun, ovun_train_data[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
 # print(roc_dt_ovun)
+# Test Evaluation
+prob_dt_class_ovun <- predict(model_dt_ovun, newdata = test, type = 'prob')
+pred_dt_class_ovun = predict(model_dt_ovun, newdata = test)
+confusionMatrix(as.factor(pred_dt_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_dt_ovun <- roc.curve(pred_dt_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+print(roc_dt_ovun)
 
 set.seed(642)
 # Model Creation
-model_dt_rose <- train(form = class ~ ., data = train, method = 'ctree', tuneLength = 5, trControl = ctrl_rose, preProcess = c("center", "scale"))
-plot(model_dt_rose)
+model_dt_rose <- train(form = class ~ ., data = rose_train_data, method = 'ctree', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_dt_rose)
 # Train Evaluation
-prob_dt_class_rose <- predict(model_dt_rose, newdata = train, type = 'prob')
-pred_dt_class_rose = predict(model_dt_rose, newdata = train)
-confusionMatrix(table(pred_dt_class_rose, train[['class']]), positive = 'F', mode = 'everything')
-roc_dt_rose <- roc.curve(pred_dt_class_rose, train[['class']], plotit = T, main = 'ROC Curve using DT & ROSE')
-print(roc_dt_rose)
-# Test Evaluation
-# prob_dt_class_rose <- predict(model_dt_rose, newdata = test, type = 'prob')
-# pred_dt_class_rose = predict(model_dt_rose, newdata = test)
-# confusionMatrix(table(pred_dt_class_rose, test[['class']]), positive = 'F', mode = 'everything')
-# roc_dt_rose <- roc.curve(pred_dt_class_rose, test[['class']], plotit = T, main = 'ROC Curve using DT & ROSE')
+# prob_dt_class_rose <- predict(model_dt_rose, newdata = rose_train_data, type = 'prob')
+# pred_dt_class_rose = predict(model_dt_rose, newdata = rose_train_data)
+# confusionMatrix(as.factor(pred_dt_class_rose), as.factor(rose_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_dt_rose <- roc.curve(pred_dt_class_rose, rose_train_data[['class']], plotit = T, main = 'ROC Curve using DT & ROSE')
 # print(roc_dt_rose)
+# Test Evaluation
+prob_dt_class_rose <- predict(model_dt_rose, newdata = test, type = 'prob')
+pred_dt_class_rose = predict(model_dt_rose, newdata = test)
+confusionMatrix(as.factor(pred_dt_class_rose), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_dt_rose <- roc.curve(pred_dt_class_rose, test[['class']], plotit = T, main = 'ROC Curve using DT & ROSE')
+print(roc_dt_rose)
 
 set.seed(642)
 # Model Creation
-model_dt_smote <- train(form = class ~ ., data = train, method = 'ctree', tuneLength = 5, trControl = ctrl_smote, preProcess = c("center", "scale"))
-plot(model_dt_smote)
+model_dt_smote <- train(form = class ~ ., data = smote_train_data, method = 'ctree', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_dt_smote)
 # Train Evaluation
-prob_dt_class_smote <- predict(model_dt_smote, newdata = train, type = 'prob')
-pred_dt_class_smote = predict(model_dt_smote, newdata = train)
-confusionMatrix(table(pred_dt_class_smote, train[['class']]), positive = 'F', mode = 'everything')
-roc_dt_smote <- roc.curve(pred_dt_class_smote, train[['class']], plotit = T, main = 'ROC Curve using DT & SMOTE')
-print(roc_dt_smote)
-# Test Evaluation
-# prob_dt_class_smote <- predict(model_dt_smote, newdata = test, type = 'prob')
-# pred_dt_class_smote = predict(model_dt_smote, newdata = test)
-# confusionMatrix(table(pred_dt_class_smote, test[['class']]), positive = 'F', mode = 'everything')
-# roc_dt_smote <- roc.curve(pred_dt_class_smote, test[['class']], plotit = T, main = 'ROC Curve using DT & SMOTE')
+# prob_dt_class_smote <- predict(model_dt_smote, newdata = smote_train_data, type = 'prob')
+# pred_dt_class_smote = predict(model_dt_smote, newdata = smote_train_data)
+# confusionMatrix(as.factor(pred_dt_class_smote), as.factor(smote_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_dt_smote <- roc.curve(pred_dt_class_smote, smote_train_data[['class']], plotit = T, main = 'ROC Curve using DT & SMOTE')
 # print(roc_dt_smote)
+# Test Evaluation
+prob_dt_class_smote <- predict(model_dt_smote, newdata = test, type = 'prob')
+pred_dt_class_smote = predict(model_dt_smote, newdata = test)
+confusionMatrix(as.factor(pred_dt_class_smote), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_dt_smote <- roc.curve(pred_dt_class_smote, test[['class']], plotit = T, main = 'ROC Curve using DT & SMOTE')
+print(roc_dt_smote)
 
 
 # ============================================================================= #
@@ -758,94 +725,94 @@ print(roc_dt_smote)
 
 set.seed(642)
 # Model Creation
-model_rf <- train(form = class ~ ., data = train, method = 'ranger', tuneLength = 5, trControl = ctrl, preProcess = c("center", "scale"))
-plot(model_rf)
+model_rf_imba <- train(form = class ~ ., data = imba_train_data, method = 'rf', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_rf_imba)
 # Train Evaluation
-# prob_rf_class <- predict(model_rf, newdata = train, type = 'prob')
-pred_rf_class = predict(model_rf, newdata = train)
-confusionMatrix(table(pred_rf_class, train[['class']]), positive = 'F', mode = 'everything')
-roc_rf <- roc.curve(pred_rf_class, train[['class']], plotit = T, main = 'ROC Curve using RF')
-print(roc_rf)
+# # prob_rf_class_imba <- predict(model_rf_imba, newdata = imba_train_data, type = 'prob')
+# pred_rf_class_imba = predict(model_rf_imba, newdata = imba_train_data)
+# confusionMatrix(as.factor(pred_rf_class_imba), as.factor(imba_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_rf_imba <- roc.curve(pred_rf_class_imba, imba_train_data[['class']], plotit = T, main = 'ROC Curve using RF')
+# print(roc_rf_imba)
 # Test Evaluation
-# pred_rf_class = predict(model_rf, newdata = test)
-# confusionMatrix(table(pred_rf_class, test[['class']]), positive = 'F', mode = 'everything')
-# roc_rf <- roc.curve(pred_rf_class, test[['class']], plotit = T, main = 'ROC Curve using RF')
-# print(roc_rf)
+pred_rf_class_imba = predict(model_rf_imba, newdata = test)
+confusionMatrix(as.factor(pred_rf_class_imba), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_rf_imba <- roc.curve(pred_rf_class_imba, test[['class']], plotit = T, main = 'ROC Curve using RF')
+print(roc_rf_imba)
 
 set.seed(642)
 # Model Creation
-model_rf_under <- train(form = class ~ ., data = train, method = 'ranger', tuneLength = 5, trControl = ctrl_under, preProcess = c("center", "scale"))
-plot(model_rf_under)
+model_rf_under <- train(form = class ~ ., data = under_train_data, method = 'rf', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_rf_under)
 # Train Evaluation
-pred_rf_class_under = predict(model_rf_under, newdata = train)
-confusionMatrix(table(pred_rf_class_under, train[['class']]), positive = 'F', mode = 'everything')
-roc_rf_under <- roc.curve(pred_rf_class_under, train[['class']], plotit = T, main = 'ROC Curve using RF & undersample')
-print(roc_rf_under)
-# Test Evaluation
-# pred_rf_class_under = predict(model_rf_under, newdata = test)
-# confusionMatrix(table(pred_rf_class_under, test[['class']]), positive = 'F', mode = 'everything')
-# roc_rf_under <- roc.curve(pred_rf_class_under, test[['class']], plotit = T, main = 'ROC Curve using RF & undersample')
+# pred_rf_class_under = predict(model_rf_under, newdata = under_train_data)
+# confusionMatrix(as.factor(pred_rf_class_under), as.factor(under_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_rf_under <- roc.curve(pred_rf_class_under, under_train_data[['class']], plotit = T, main = 'ROC Curve using RF & undersample')
 # print(roc_rf_under)
+# Test Evaluation
+pred_rf_class_under = predict(model_rf_under, newdata = test)
+confusionMatrix(as.factor(pred_rf_class_under), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_rf_under <- roc.curve(pred_rf_class_under, test[['class']], plotit = T, main = 'ROC Curve using RF & undersample')
+print(roc_rf_under)
 
 set.seed(642)
 # Model Creation
-model_rf_over <- train(form = class ~ ., data = train, method = 'ranger', tuneLength = 5, trControl = ctrl_over, preProcess = c("center", "scale"))
-plot(model_rf_over)
+model_rf_over <- train(form = class ~ ., data = over_train_data, method = 'rf', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_rf_over)
 # Train Evaluation
-pred_rf_class_over = predict(model_rf_over, newdata = train)
-confusionMatrix(table(pred_rf_class_over, train[['class']]), positive = 'F', mode = 'everything')
-roc_rf_over <- roc.curve(pred_rf_class_over, train[['class']], plotit = T, main = 'ROC Curve using RF & oversample')
-print(roc_rf_over)
-# Test Evaluation
-# pred_rf_class_over = predict(model_rf_over, newdata = test)
-# confusionMatrix(table(pred_rf_class_over, test[['class']]), positive = 'F', mode = 'everything')
-# roc_rf_over <- roc.curve(pred_rf_class_over, test[['class']], plotit = T, main = 'ROC Curve using RF & oversample')
+# pred_rf_class_over = predict(model_rf_over, newdata = over_train_data)
+# confusionMatrix(as.factor(pred_rf_class_over), as.factor(over_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_rf_over <- roc.curve(pred_rf_class_over, over_train_data[['class']], plotit = T, main = 'ROC Curve using RF & oversample')
 # print(roc_rf_over)
+# Test Evaluation
+pred_rf_class_over = predict(model_rf_over, newdata = test)
+confusionMatrix(as.factor(pred_rf_class_over), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_rf_over <- roc.curve(pred_rf_class_over, test[['class']], plotit = T, main = 'ROC Curve using RF & oversample')
+print(roc_rf_over)
 
 set.seed(642)
 # Model Creation
-model_rf_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'ctree', tuneLength = 5, trControl = ctrl, preProcess = c("center", "scale"))
-plot(model_rf_ovun)
+model_rf_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'rf', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_rf_ovun)
 # Train Evaluation
-pred_rf_class_ovun = predict(model_rf_ovun, newdata = train)
-confusionMatrix(as.factor(pred_rf_class_ovun), as.factor(train[['class']]), positive = 'F', mode = 'everything')
-roc_rf_ovun <- roc.curve(pred_rf_class_ovun, train[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
-print(roc_rf_ovun)
-# Test Evaluation
-# pred_rf_class_ovun = predict(model_rf_ovun, newdata = test)
-# confusionMatrix(as.factor(pred_rf_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
-# roc_rf_ovun <- roc.curve(pred_rf_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+# pred_rf_class_ovun = predict(model_rf_ovun, newdata = ovun_train_data)
+# confusionMatrix(as.factor(pred_rf_class_ovun), as.factor(ovun_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_rf_ovun <- roc.curve(pred_rf_class_ovun, ovun_train_data[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
 # print(roc_rf_ovun)
+# Test Evaluation
+pred_rf_class_ovun = predict(model_rf_ovun, newdata = test)
+confusionMatrix(as.factor(pred_rf_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_rf_ovun <- roc.curve(pred_rf_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+print(roc_rf_ovun)
 
 set.seed(642)
 # Model Creation
-model_rf_rose <- train(form = class ~ ., data = train, method = 'ranger', tuneLength = 5, trControl = ctrl_rose, preProcess = c("center", "scale"))
-plot(model_rf_rose)
+model_rf_rose <- train(form = class ~ ., data = rose_train_data, method = 'rf', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_rf_rose)
 # Train Evaluation
-pred_rf_class_rose = predict(model_rf_rose, newdata = train)
-confusionMatrix(table(pred_rf_class_rose, train[['class']]), positive = 'F', mode = 'everything')
-roc_rf_rose <- roc.curve(pred_rf_class_rose, train[['class']], plotit = T, main = 'ROC Curve using RF & ROSE')
-print(roc_rf_rose)
-# Test Evaluation
-# pred_rf_class_rose = predict(model_rf_rose, newdata = test)
-# confusionMatrix(table(pred_rf_class_rose, test[['class']]), positive = 'F', mode = 'everything')
-# roc_rf_rose <- roc.curve(pred_rf_class_rose, test[['class']], plotit = T, main = 'ROC Curve using RF & ROSE')
+# pred_rf_class_rose = predict(model_rf_rose, newdata = rose_train_data)
+# confusionMatrix(as.factor(pred_rf_class_rose), as.factor(rose_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_rf_rose <- roc.curve(pred_rf_class_rose, rose_train_data[['class']], plotit = T, main = 'ROC Curve using RF & ROSE')
 # print(roc_rf_rose)
+# Test Evaluation
+pred_rf_class_rose = predict(model_rf_rose, newdata = test)
+confusionMatrix(as.factor(pred_rf_class_rose), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_rf_rose <- roc.curve(pred_rf_class_rose, test[['class']], plotit = T, main = 'ROC Curve using RF & ROSE')
+print(roc_rf_rose)
 
 set.seed(642)
 # Model Creation
-model_rf_smote <- train(form = class ~ ., data = train, method = 'ranger', tuneLength = 5, trControl = ctrl_smote, preProcess = c("center", "scale"))
-plot(model_rf_smote)
-# Train Evaluation
-pred_rf_class_smote = predict(model_rf_smote, newdata = train)
-confusionMatrix(table(pred_rf_class_smote, train[['class']]), positive = 'F', mode = 'everything')
-roc_rf_smote <- roc.curve(pred_rf_class_smote, train[['class']], plotit = T, main = 'ROC Curve using RF & SMOTE')
-print(roc_rf_smote)
-# Test Evaluation
-# pred_rf_class_smote = predict(model_rf_smote, newdata = test)
-# confusionMatrix(table(pred_rf_class_smote, test[['class']]), positive = 'F', mode = 'everything')
-# roc_rf_smote <- roc.curve(pred_rf_class_smote, test[['class']], plotit = T, main = 'ROC Curve using RF & SMOTE')
+model_rf_smote <- train(form = class ~ ., data = smote_train_data, method = 'rf', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_rf_smote)
+# # Train Evaluation
+# pred_rf_class_smote = predict(model_rf_smote, newdata = smote_train_data)
+# confusionMatrix(as.factor(pred_rf_class_smote), as.factor(smote_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_rf_smote <- roc.curve(pred_rf_class_smote, smote_train_data[['class']], plotit = T, main = 'ROC Curve using RF & SMOTE')
 # print(roc_rf_smote)
+# Test Evaluation
+pred_rf_class_smote = predict(model_rf_smote, newdata = test)
+confusionMatrix(as.factor(pred_rf_class_smote), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_rf_smote <- roc.curve(pred_rf_class_smote, test[['class']], plotit = T, main = 'ROC Curve using RF & SMOTE')
+print(roc_rf_smote)
 
 
 # ============================================================================= #
@@ -861,105 +828,105 @@ print(roc_rf_smote)
 
 set.seed(642)
 # Model Creation
-model_knn <- train(form = class ~ ., data = train, method = 'knn', tuneLength = 5, trControl = ctrl, preProcess = c("center", "scale"))
-plot(model_knn)
+model_knn_imba <- train(form = class ~ ., data = imba_train_data, method = 'knn', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_knn_imba)
 # Train Evaluation
-prob_knn_class <- predict(model_knn, newdata = train, type = 'prob')
-pred_knn_class = predict(model_knn, newdata = train)
-confusionMatrix(table(pred_knn_class, train[['class']]), positive = 'F', mode = 'everything')
-roc_knn <- roc.curve(pred_knn_class, train[['class']], plotit = T, main = 'ROC Curve using KNN')
-print(roc_knn)
+# prob_knn_class_imba <- predict(model_knn_imba, newdata = imba_train_data, type = 'prob')
+# pred_knn_class_imba = predict(model_knn_imba, newdata = imba_train_data)
+# confusionMatrix(as.factor(pred_knn_class_imba), as.factor(imba_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_knn_imba <- roc.curve(pred_knn_class_imba, imba_train_data[['class']], plotit = T, main = 'ROC Curve using KNN')
+# print(roc_knn_imba)
 # Test Evaluation
-# prob_knn_class <- predict(model_knn, newdata = test, type = 'prob')
-# pred_knn_class = predict(model_knn, newdata = test)
-# confusionMatrix(table(pred_knn_class, test[['class']]), positive = 'F', mode = 'everything')
-# roc_knn <- roc.curve(pred_knn_class, test[['class']], plotit = T, main = 'ROC Curve using KNN')
-# print(roc_knn)
+prob_knn_class_imba <- predict(model_knn_imba, newdata = test, type = 'prob')
+pred_knn_class_imba = predict(model_knn_imba, newdata = test)
+confusionMatrix(as.factor(pred_knn_class_imba), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_knn_imba <- roc.curve(pred_knn_class_imba, test[['class']], plotit = T, main = 'ROC Curve using KNN')
+print(roc_knn_imba)
 
 set.seed(642)
 # Model Creation
-model_knn_under <- train(form = class ~ ., data = train, method = 'knn', tuneLength = 5, trControl = ctrl_under, preProcess = c("center", "scale"))
-plot(model_knn_under)
+model_knn_under <- train(form = class ~ ., data = under_train_data, method = 'knn', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_knn_under)
 # Train Evaluation
-prob_knn_class_under <- predict(model_knn_under, newdata = train, type = 'prob')
-pred_knn_class_under = predict(model_knn_under, newdata = train)
-confusionMatrix(table(pred_knn_class_under, train[['class']]), positive = 'F', mode = 'everything')
-roc_knn_under <- roc.curve(pred_knn_class_under, train[['class']], plotit = T, main = 'ROC Curve using KNN and undersample')
-print(roc_knn_under)
-# Test Evaluation
-# prob_knn_class_under <- predict(model_knn_under, newdata = test, type = 'prob')
-# pred_knn_class_under = predict(model_knn_under, newdata = test)
-# confusionMatrix(table(pred_knn_class_under, test[['class']]), positive = 'F', mode = 'everything')
-# roc_knn_under <- roc.curve(pred_knn_class_under, test[['class']], plotit = T, main = 'ROC Curve using KNN and undersample')
+# prob_knn_class_under <- predict(model_knn_under, newdata = under_train_data, type = 'prob')
+# pred_knn_class_under = predict(model_knn_under, newdata = under_train_data)
+# confusionMatrix(as.factor(pred_knn_class_under), as.factor(under_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_knn_under <- roc.curve(pred_knn_class_under, under_train_data[['class']], plotit = T, main = 'ROC Curve using KNN and undersample')
 # print(roc_knn_under)
+# Test Evaluation
+prob_knn_class_under <- predict(model_knn_under, newdata = test, type = 'prob')
+pred_knn_class_under = predict(model_knn_under, newdata = test)
+confusionMatrix(as.factor(pred_knn_class_under), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_knn_under <- roc.curve(pred_knn_class_under, test[['class']], plotit = T, main = 'ROC Curve using KNN and undersample')
+print(roc_knn_under)
 
 set.seed(642)
 # Model Creation
-model_knn_over <- train(form = class ~ ., data = train, method = 'knn', tuneLength = 5, trControl = ctrl_over, preProcess = c("center", "scale"))
-plot(model_knn_over)
+model_knn_over <- train(form = class ~ ., data = over_train_data, method = 'knn', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_knn_over)
 # Train Evaluation
-prob_knn_class_over <- predict(model_knn_over, newdata = train, type = 'prob')
-pred_knn_class_over = predict(model_knn_over, newdata = train)
-confusionMatrix(table(pred_knn_class_over, train[['class']]), positive = 'F', mode = 'everything')
-roc_knn_over <- roc.curve(pred_knn_class_over, train[['class']], plotit = T, main = 'ROC Curve using KNN and oversample')
-print(roc_knn_over)
-# Test Evaluation
-# prob_knn_class_over <- predict(model_knn_over, newdata = test, type = 'prob')
-# pred_knn_class_over = predict(model_knn_over, newdata = test)
-# confusionMatrix(table(pred_knn_class_over, test[['class']]), positive = 'F', mode = 'everything')
-# roc_knn_over <- roc.curve(pred_knn_class_over, test[['class']], plotit = T, main = 'ROC Curve using KNN and oversample')
+# prob_knn_class_over <- predict(model_knn_over, newdata = over_train_data, type = 'prob')
+# pred_knn_class_over = predict(model_knn_over, newdata = over_train_data)
+# confusionMatrix(as.factor(pred_knn_class_over), as.factor(over_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_knn_over <- roc.curve(pred_knn_class_over, over_train_data[['class']], plotit = T, main = 'ROC Curve using KNN and oversample')
 # print(roc_knn_over)
+# Test Evaluation
+prob_knn_class_over <- predict(model_knn_over, newdata = test, type = 'prob')
+pred_knn_class_over = predict(model_knn_over, newdata = test)
+confusionMatrix(as.factor(pred_knn_class_over), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_knn_over <- roc.curve(pred_knn_class_over, test[['class']], plotit = T, main = 'ROC Curve using KNN and oversample')
+print(roc_knn_over)
 
 set.seed(642)
 # Model Creation
-model_knn_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'ctree', tuneLength = 5, trControl = ctrl, preProcess = c("center", "scale"))
-plot(model_knn_ovun)
+model_knn_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'ctree', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_knn_ovun)
 # Train Evaluation
-prob_knn_class_ovun <- predict(model_knn_ovun, newdata = train, type = 'prob')
-pred_knn_class_ovun = predict(model_knn_ovun, newdata = train)
-confusionMatrix(as.factor(pred_knn_class_ovun), as.factor(train[['class']]), positive = 'F', mode = 'everything')
-roc_knn_ovun <- roc.curve(pred_knn_class_ovun, train[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
-print(roc_knn_ovun)
-# Test Evaluation
-# prob_knn_class_ovun <- predict(model_knn_ovun, newdata = test, type = 'prob')
-# pred_knn_class_ovun = predict(model_knn_ovun, newdata = test)
-# confusionMatrix(as.factor(pred_knn_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
-# roc_knn_ovun <- roc.curve(pred_knn_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+# prob_knn_class_ovun <- predict(model_knn_ovun, newdata = ovun_train_data, type = 'prob')
+# pred_knn_class_ovun = predict(model_knn_ovun, newdata = ovun_train_data)
+# confusionMatrix(as.factor(pred_knn_class_ovun), as.factor(ovun_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_knn_ovun <- roc.curve(pred_knn_class_ovun, ovun_train_data[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
 # print(roc_knn_ovun)
+# Test Evaluation
+prob_knn_class_ovun <- predict(model_knn_ovun, newdata = test, type = 'prob')
+pred_knn_class_ovun = predict(model_knn_ovun, newdata = test)
+confusionMatrix(as.factor(pred_knn_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_knn_ovun <- roc.curve(pred_knn_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+print(roc_knn_ovun)
 
 set.seed(642)
 # Model Creation
-model_knn_rose <- train(form = class ~ ., data = train, method = 'knn', tuneLength = 5, trControl = ctrl_rose, preProcess = c("center", "scale"))
-plot(model_knn_rose)
+model_knn_rose <- train(form = class ~ ., data = rose_train_data, method = 'knn', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_knn_rose)
 # Train Evaluation
-prob_knn_class_rose <- predict(model_knn_rose, newdata = train, type = 'prob')
-pred_knn_class_rose = predict(model_knn_rose, newdata = train)
-confusionMatrix(table(pred_knn_class_rose, train[['class']]), positive = 'F', mode = 'everything')
-roc_knn_rose <- roc.curve(pred_knn_class_rose, train[['class']], plotit = T, main = 'ROC Curve using KNN and ROSE')
-print(roc_knn_rose)
-# Test Evaluation
-# prob_knn_class_rose <- predict(model_knn_rose, newdata = test, type = 'prob')
-# pred_knn_class_rose = predict(model_knn_rose, newdata = test)
-# confusionMatrix(table(pred_knn_class_rose, test[['class']]), positive = 'F', mode = 'everything')
-# roc_knn_rose <- roc.curve(pred_knn_class_rose, test[['class']], plotit = T, main = 'ROC Curve using KNN and ROSE')
+# prob_knn_class_rose <- predict(model_knn_rose, newdata = rose_train_data, type = 'prob')
+# pred_knn_class_rose = predict(model_knn_rose, newdata = rose_train_data)
+# confusionMatrix(as.factor(pred_knn_class_rose), as.factor(rose_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_knn_rose <- roc.curve(pred_knn_class_rose, rose_train_data[['class']], plotit = T, main = 'ROC Curve using KNN and ROSE')
 # print(roc_knn_rose)
+# Test Evaluation
+prob_knn_class_rose <- predict(model_knn_rose, newdata = test, type = 'prob')
+pred_knn_class_rose = predict(model_knn_rose, newdata = test)
+confusionMatrix(as.factor(pred_knn_class_rose), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_knn_rose <- roc.curve(pred_knn_class_rose, test[['class']], plotit = T, main = 'ROC Curve using KNN and ROSE')
+print(roc_knn_rose)
 
 set.seed(642)
 # Model Creation
-model_knn_smote <- train(form = class ~ ., data = train, method = 'knn', tuneLength = 5, trControl = ctrl_smote, preProcess = c("center", "scale"))
-plot(model_knn_smote)
+model_knn_smote <- train(form = class ~ ., data = smote_train_data, method = 'knn', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_knn_smote)
 # Train Evaluation
-prob_knn_class_smote <- predict(model_knn_smote, newdata = train, type = 'prob')
-pred_knn_class_smote = predict(model_knn_smote, newdata = train)
-confusionMatrix(table(pred_knn_class_smote, train[['class']]), positive = 'F', mode = 'everything')
-roc_knn_smote <- roc.curve(pred_knn_class_smote, train[['class']], plotit = T, main = 'ROC Curve using KNN and SMOTE')
-print(roc_knn_smote)
-# Test Evaluation
-# prob_knn_class_smote <- predict(model_knn_smote, newdata = test, type = 'prob')
-# pred_knn_class_smote = predict(model_knn_smote, newdata = test)
-# confusionMatrix(table(pred_knn_class_smote, test[['class']]), positive = 'F', mode = 'everything')
-# roc_knn_smote <- roc.curve(pred_knn_class_smote, test[['class']], plotit = T, main = 'ROC Curve using KNN and SMOTE')
+# prob_knn_class_smote <- predict(model_knn_smote, newdata = smote_train_data, type = 'prob')
+# pred_knn_class_smote = predict(model_knn_smote, newdata = smote_train_data)
+# confusionMatrix(as.factor(pred_knn_class_smote), as.factor(smote_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_knn_smote <- roc.curve(pred_knn_class_smote, smote_train_data[['class']], plotit = T, main = 'ROC Curve using KNN and SMOTE')
 # print(roc_knn_smote)
+# Test Evaluation
+prob_knn_class_smote <- predict(model_knn_smote, newdata = test, type = 'prob')
+pred_knn_class_smote = predict(model_knn_smote, newdata = test)
+confusionMatrix(as.factor(pred_knn_class_smote), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_knn_smote <- roc.curve(pred_knn_class_smote, test[['class']], plotit = T, main = 'ROC Curve using KNN and SMOTE')
+print(roc_knn_smote)
 
 
 # ============================================================================= #
@@ -975,105 +942,105 @@ print(roc_knn_smote)
 
 set.seed(642)
 # Model Creation
-model_nb <- train(form = class ~ ., data = train, method = 'naive_bayes', tuneLength = 5, trControl = ctrl, preProcess = c("center", "scale"))
-plot(model_nb)
+model_nb_imba <- train(form = class ~ ., data = imba_train_data, method = 'naive_bayes', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_nb_imba)
 # Train Evaluation
-prob_nb_class <- predict(model_nb, newdata = train, type = 'prob')
-pred_nb_class = predict(model_nb, newdata = train)
-confusionMatrix(table(pred_nb_class, train[['class']]), positive = 'F', mode = 'everything')
-roc_nb <- roc.curve(pred_nb_class, train[['class']], plotit = T, main = 'ROC Curve using NB')
-print(roc_nb)
+# prob_nb_class_imba <- predict(model_nb_imba, newdata = imba_train_data, type = 'prob')
+# pred_nb_class_imba = predict(model_nb_imba, newdata = imba_train_data)
+# confusionMatrix(as.factor(pred_nb_class_imba), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+# roc_nb_imba <- roc.curve(pred_nb_class_imba, imba_train_data[['class']], plotit = T, main = 'ROC Curve using NB')
+# print(roc_nb_imba)
 # Test Evaluation
-# prob_nb_class <- predict(model_nb, newdata = test, type = 'prob')
-# pred_nb_class = predict(model_nb, newdata = test)
-# confusionMatrix(table(pred_nb_class, test[['class']]), positive = 'F', mode = 'everything')
-# roc_nb <- roc.curve(pred_nb_class, test[['class']], plotit = T, main = 'ROC Curve using NB')
-# print(roc_nb)
+prob_nb_class_imba <- predict(model_nb_imba, newdata = test, type = 'prob')
+pred_nb_class_imba = predict(model_nb_imba, newdata = test)
+confusionMatrix(as.factor(pred_nb_class_imba), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_nb_imba <- roc.curve(pred_nb_class_imba, test[['class']], plotit = T, main = 'ROC Curve using NB')
+print(roc_nb_imba)
 
 set.seed(642)
 # Model Creation
-model_nb_under <- train(form = class ~ ., data = train, method = 'naive_bayes', tuneLength = 5, trControl = ctrl_under, preProcess = c("center", "scale"))
-plot(model_nb_under)
+model_nb_under <- train(form = class ~ ., data = under_train_data, method = 'naive_bayes', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_nb_under)
 # Train Evaluation
-prob_nb_class_under <- predict(model_nb_under, newdata = train, type = 'prob')
-pred_nb_class_under = predict(model_nb_under, newdata = train)
-confusionMatrix(table(pred_nb_class_under, train[['class']]), positive = 'F', mode = 'everything')
-roc_nb_under <- roc.curve(pred_nb_class_under, train[['class']], plotit = T, main = 'ROC Curve using NB & undersample')
-print(roc_nb_under)
-# Test Evaluation
-# prob_nb_class_under <- predict(model_nb_under, newdata = test, type = 'prob')
-# pred_nb_class_under = predict(model_nb_under, newdata = test)
-# confusionMatrix(table(pred_nb_class_under, test[['class']]), positive = 'F', mode = 'everything')
-# roc_nb_under <- roc.curve(pred_nb_class_under, test[['class']], plotit = T, main = 'ROC Curve using NB & undersample')
+# prob_nb_class_under <- predict(model_nb_under, newdata = under_train_data, type = 'prob')
+# pred_nb_class_under = predict(model_nb_under, newdata = under_train_data)
+# confusionMatrix(as.factor(pred_nb_class_under), as.factor(under_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_nb_under <- roc.curve(pred_nb_class_under, under_train_data[['class']], plotit = T, main = 'ROC Curve using NB & undersample')
 # print(roc_nb_under)
+# Test Evaluation
+prob_nb_class_under <- predict(model_nb_under, newdata = test, type = 'prob')
+pred_nb_class_under = predict(model_nb_under, newdata = test)
+confusionMatrix(as.factor(pred_nb_class_under), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_nb_under <- roc.curve(pred_nb_class_under, test[['class']], plotit = T, main = 'ROC Curve using NB & undersample')
+print(roc_nb_under)
 
 set.seed(642)
 # Model Creation
-model_nb_over <- train(form = class ~ ., data = train, method = 'naive_bayes', tuneLength = 5, trControl = ctrl_over, preProcess = c("center", "scale"))
-plot(model_nb_over)
+model_nb_over <- train(form = class ~ ., data = over_train_data, method = 'naive_bayes', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_nb_over)
 # Train Evaluation
-prob_nb_class_over <- predict(model_nb_over, newdata = train, type = 'prob')
-pred_nb_class_over = predict(model_nb_over, newdata = train)
-confusionMatrix(table(pred_nb_class_over, train[['class']]), positive = 'F', mode = 'everything')
-roc_nb_over <- roc.curve(pred_nb_class_over, train[['class']], plotit = T, main = 'ROC Curve using NB & oversample')
-print(roc_nb_over)
-# Test Evaluation
-# prob_nb_class_over <- predict(model_nb_over, newdata = test, type = 'prob')
-# pred_nb_class_over = predict(model_nb_over, newdata = test)
-# confusionMatrix(table(pred_nb_class_over, test[['class']]), positive = 'F', mode = 'everything')
-# roc_nb_over <- roc.curve(pred_nb_class_over, test[['class']], plotit = T, main = 'ROC Curve using NB & oversample')
+# prob_nb_class_over <- predict(model_nb_over, newdata = over_train_data, type = 'prob')
+# pred_nb_class_over = predict(model_nb_over, newdata = over_train_data)
+# confusionMatrix(as.factor(pred_nb_class_over), as.factor(over_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_nb_over <- roc.curve(pred_nb_class_over, over_train_data[['class']], plotit = T, main = 'ROC Curve using NB & oversample')
 # print(roc_nb_over)
+# Test Evaluation
+prob_nb_class_over <- predict(model_nb_over, newdata = test, type = 'prob')
+pred_nb_class_over = predict(model_nb_over, newdata = test)
+confusionMatrix(as.factor(pred_nb_class_over), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_nb_over <- roc.curve(pred_nb_class_over, test[['class']], plotit = T, main = 'ROC Curve using NB & oversample')
+print(roc_nb_over)
 
 set.seed(642)
 # Model Creation
-model_nb_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'ctree', tuneLength = 5, trControl = ctrl, preProcess = c("center", "scale"))
-plot(model_nb_ovun)
+model_nb_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'ctree', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_nb_ovun)
 # Train Evaluation
-prob_nb_class_ovun <- predict(model_nb_ovun, newdata = train, type = 'prob')
-pred_nb_class_ovun = predict(model_nb_ovun, newdata = train)
-confusionMatrix(as.factor(pred_nb_class_ovun), as.factor(train[['class']]), positive = 'F', mode = 'everything')
-roc_nb_ovun <- roc.curve(pred_nb_class_ovun, train[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
-print(roc_nb_ovun)
-# Test Evaluation
-# prob_nb_class_ovun <- predict(model_nb_ovun, newdata = test, type = 'prob')
-# pred_nb_class_ovun = predict(model_nb_ovun, newdata = test)
-# confusionMatrix(as.factor(pred_nb_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
-# roc_nb_ovun <- roc.curve(pred_nb_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+# prob_nb_class_ovun <- predict(model_nb_ovun, newdata = ovun_train_data, type = 'prob')
+# pred_nb_class_ovun = predict(model_nb_ovun, newdata = ovun_train_data)
+# confusionMatrix(as.factor(pred_nb_class_ovun), as.factor(ovun_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_nb_ovun <- roc.curve(pred_nb_class_ovun, ovun_train_data[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
 # print(roc_nb_ovun)
+# Test Evaluation
+prob_nb_class_ovun <- predict(model_nb_ovun, newdata = test, type = 'prob')
+pred_nb_class_ovun = predict(model_nb_ovun, newdata = test)
+confusionMatrix(as.factor(pred_nb_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_nb_ovun <- roc.curve(pred_nb_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+print(roc_nb_ovun)
 
 set.seed(642)
 # Model Creation
-model_nb_rose <- train(form = class ~ ., data = train, method = 'naive_bayes', tuneLength = 5, trControl = ctrl_rose, preProcess = c("center", "scale"))
-plot(model_nb_rose)
+model_nb_rose <- train(form = class ~ ., data = rose_train_data, method = 'naive_bayes', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_nb_rose)
 # Train Evaluation
-prob_nb_class_rose <- predict(model_nb_rose, newdata = train, type = 'prob')
-pred_nb_class_rose = predict(model_nb_rose, newdata = train)
-confusionMatrix(table(pred_nb_class_rose, train[['class']]), positive = 'F', mode = 'everything')
-roc_nb_rose <- roc.curve(pred_nb_class_rose, train[['class']], plotit = T, main = 'ROC Curve using NB & ROSE')
-print(roc_nb_rose)
-# Test Evaluation
-# prob_nb_class_rose <- predict(model_nb_rose, newdata = test, type = 'prob')
-# pred_nb_class_rose = predict(model_nb_rose, newdata = test)
-# confusionMatrix(table(pred_nb_class_rose, test[['class']]), positive = 'F', mode = 'everything')
-# roc_nb_rose <- roc.curve(pred_nb_class_rose, test[['class']], plotit = T, main = 'ROC Curve using NB & ROSE')
+# prob_nb_class_rose <- predict(model_nb_rose, newdata = rose_train_data, type = 'prob')
+# pred_nb_class_rose = predict(model_nb_rose, newdata = rose_train_data)
+# confusionMatrix(as.factor(pred_nb_class_rose), as.factor(rose_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_nb_rose <- roc.curve(pred_nb_class_rose, rose_train_data[['class']], plotit = T, main = 'ROC Curve using NB & ROSE')
 # print(roc_nb_rose)
+# Test Evaluation
+prob_nb_class_rose <- predict(model_nb_rose, newdata = test, type = 'prob')
+pred_nb_class_rose = predict(model_nb_rose, newdata = test)
+confusionMatrix(as.factor(pred_nb_class_rose), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_nb_rose <- roc.curve(pred_nb_class_rose, test[['class']], plotit = T, main = 'ROC Curve using NB & ROSE')
+print(roc_nb_rose)
 
 set.seed(642)
 # Model Creation
-model_nb_smote <- train(form = class ~ ., data = train, method = 'naive_bayes', tuneLength = 5, trControl = ctrl_smote, preProcess = c("center", "scale"))
-plot(model_nb_smote)
+model_nb_smote <- train(form = class ~ ., data = smote_train_data, method = 'naive_bayes', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_nb_smote)
 # Train Evaluation
-prob_nb_class_smote <- predict(model_nb_smote, newdata = train, type = 'prob')
-pred_nb_class_smote = predict(model_nb_smote, newdata = train)
-confusionMatrix(table(pred_nb_class_smote, train[['class']]), positive = 'F', mode = 'everything')
-roc_nb_smote <- roc.curve(pred_nb_class_smote, train[['class']], plotit = T, main = 'ROC Curve using NB & SMOTE')
-print(roc_nb_smote)
-# Test Evaluation
-# prob_nb_class_smote <- predict(model_nb_smote, newdata = test, type = 'prob')
-# pred_nb_class_smote = predict(model_nb_smote, newdata = test)
-# confusionMatrix(table(pred_nb_class_smote, test[['class']]), positive = 'F', mode = 'everything')
-# roc_nb_smote <- roc.curve(pred_nb_class_smote, test[['class']], plotit = T, main = 'ROC Curve using NB & SMOTE')
+# prob_nb_class_smote <- predict(model_nb_smote, newdata = smote_train_data, type = 'prob')
+# pred_nb_class_smote = predict(model_nb_smote, newdata = smote_train_data)
+# confusionMatrix(as.factor(pred_nb_class_smote), as.factor(smote_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_nb_smote <- roc.curve(pred_nb_class_smote, smote_train_data[['class']], plotit = T, main = 'ROC Curve using NB & SMOTE')
 # print(roc_nb_smote)
+# Test Evaluation
+prob_nb_class_smote <- predict(model_nb_smote, newdata = test, type = 'prob')
+pred_nb_class_smote = predict(model_nb_smote, newdata = test)
+confusionMatrix(as.factor(pred_nb_class_smote), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_nb_smote <- roc.curve(pred_nb_class_smote, test[['class']], plotit = T, main = 'ROC Curve using NB & SMOTE')
+print(roc_nb_smote)
 
 
 # ============================================================================= #
@@ -1089,115 +1056,797 @@ print(roc_nb_smote)
 
 set.seed(642)
 # Model Creation
-model_svm <- train(form = class ~ ., data = train, method = 'svmRadial', tuneLength = 5, trControl = ctrl, preProcess = c("center", "scale"))
-plot(model_svm)
+model_svm_imba <- train(form = class ~ ., data = imba_train_data, method = 'svmRadial', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_svm_imba)
 # Train Evaluation
-prob_svm_class <- predict(model_svm, newdata = train, type = 'prob')
-pred_svm_class = predict(model_svm, newdata = train)
-confusionMatrix(table(pred_svm_class, train[['class']]), positive = 'F', mode = 'everything')
-roc_svm <- roc.curve(pred_svm_class, train[['class']], plotit = T, main = 'ROC Curve using SVM')
-print(roc_svm)
+# prob_svm_class_imba <- predict(model_svm_imba, newdata = imba_train_data, type = 'prob')
+# pred_svm_class_imba = predict(model_svm_imba, newdata = imba_train_data)
+# confusionMatrix(as.factor(pred_svm_class_imba), as.factor(imba_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_svm_imba <- roc.curve(pred_svm_class_imba, imba_train_data[['class']], plotit = T, main = 'ROC Curve using SVM')
+# print(roc_svm_imba)
 # Test Evaluation
-# prob_svm_class <- predict(model_svm, newdata = test, type = 'prob')
-# pred_svm_class = predict(model_svm, newdata = test)
-# confusionMatrix(table(pred_svm_class, test[['class']]), positive = 'F', mode = 'everything')
-# roc_svm <- roc.curve(pred_svm_class, test[['class']], plotit = T, main = 'ROC Curve using SVM')
-# print(roc_svm)
+prob_svm_class_imba <- predict(model_svm_imba, newdata = test, type = 'prob')
+pred_svm_class_imba = predict(model_svm_imba, newdata = test)
+confusionMatrix(as.factor(pred_svm_class_imba), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_svm_imba <- roc.curve(pred_svm_class_imba, test[['class']], plotit = T, main = 'ROC Curve using SVM')
+print(roc_svm_imba)
 
 set.seed(642)
 # Model Creation
-model_svm_under <- train(form = class ~ ., data = train, method = 'svmRadial', tuneLength = 5, trControl = ctrl_under, preProcess = c("center", "scale"))
+model_svm_under <- train(form = class ~ ., data = under_train_data, method = 'svmRadial', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_svm_under)
+# Train Evaluation
+# prob_svm_class_under <- predict(model_svm_under, newdata = under_train_data, type = 'prob')
+# pred_svm_class_under = predict(model_svm_under, newdata = under_train_data)
+# confusionMatrix(as.factor(pred_svm_class_under), as.factor(under_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_svm_under <- roc.curve(pred_svm_class_under, under_train_data[['class']], plotit = T, main = 'ROC Curve using SVM & undersample')
+# print(roc_svm_under)
+# Test Evaluation
+prob_svm_class_under <- predict(model_svm_under, newdata = test, type = 'prob')
+pred_svm_class_under = predict(model_svm_under, newdata = test)
+confusionMatrix(as.factor(pred_svm_class_under), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_svm_under <- roc.curve(pred_svm_class_under, test[['class']], plotit = T, main = 'ROC Curve using SVM & undersample')
+print(roc_svm_under)
+
+set.seed(642)
+# Model Creation
+model_svm_over <- train(form = class ~ ., data = over_train_data, method = 'svmRadial', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_svm_over)
+# Train Evaluation
+# prob_svm_class_over <- predict(model_svm_over, newdata = over_train_data, type = 'prob')
+# pred_svm_class_over = predict(model_svm_over, newdata = over_train_data)
+# confusionMatrix(as.factor(pred_svm_class_over), as.factor(over_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_svm_over <- roc.curve(pred_svm_class_over, over_train_data[['class']], plotit = T, main = 'ROC Curve using SVM & oversample')
+# print(roc_svm_over)
+# Test Evaluation
+prob_svm_class_over <- predict(model_svm_over, newdata = test, type = 'prob')
+pred_svm_class_over = predict(model_svm_over, newdata = test)
+confusionMatrix(as.factor(pred_svm_class_over), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_svm_over <- roc.curve(pred_svm_class_over, test[['class']], plotit = T, main = 'ROC Curve using SVM & oversample')
+print(roc_svm_over)
+
+set.seed(642)
+# Model Creation
+model_svm_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'ctree', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_svm_ovun)
+# Train Evaluation
+# prob_svm_class_ovun <- predict(model_svm_ovun, newdata = ovun_train_data, type = 'prob')
+# pred_svm_class_ovun = predict(model_svm_ovun, newdata = ovun_train_data)
+# confusionMatrix(as.factor(pred_svm_class_ovun), as.factor(ovun_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_svm_ovun <- roc.curve(pred_svm_class_ovun, ovun_train_data[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+# print(roc_svm_ovun)
+# Test Evaluation
+prob_svm_class_ovun <- predict(model_svm_ovun, newdata = test, type = 'prob')
+pred_svm_class_ovun = predict(model_svm_ovun, newdata = test)
+confusionMatrix(as.factor(pred_svm_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_svm_ovun <- roc.curve(pred_svm_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+print(roc_svm_ovun)
+
+set.seed(642)
+# Model Creation
+model_svm_rose <- train(form = class ~ ., data = rose_train_data, method = 'svmRadial', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_svm_rose)
+# Train Evaluation
+# prob_svm_class_rose <- predict(model_svm_rose, newdata = rose_train_data, type = 'prob')
+# pred_svm_class_rose = predict(model_svm_rose, newdata = rose_train_data)
+# confusionMatrix(as.factor(pred_svm_class_rose), as.factor(rose_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_svm_rose <- roc.curve(pred_svm_class_rose, rose_train_data[['class']], plotit = T, main = 'ROC Curve using SVM & ROSE')
+# print(roc_svm_rose)
+# Test Evaluation
+prob_svm_class_rose <- predict(model_svm_rose, newdata = test, type = 'prob')
+pred_svm_class_rose = predict(model_svm_rose, newdata = test)
+confusionMatrix(as.factor(pred_svm_class_rose), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_svm_rose <- roc.curve(pred_svm_class_rose, test[['class']], plotit = T, main = 'ROC Curve using SVM & ROSE')
+print(roc_svm_rose)
+
+set.seed(642)
+# Model Creation
+model_svm_smote <- train(form = class ~ ., data = smote_train_data, method = 'svmRadial', trControl = ctrl_noTune, preProcess = c("center", "scale"), metric = 'ROC')
+# plot(model_svm_smote)
+# Train Evaluation
+# prob_svm_class_smote <- predict(model_svm_smote, newdata = smote_train_data, type = 'prob')
+# pred_svm_class_smote = predict(model_svm_smote, newdata = smote_train_data)
+# confusionMatrix(as.factor(pred_svm_class_smote), as.factor(smote_train_data), positive = 'F', mode = 'everything')
+# roc_svm_smote <- roc.curve(pred_svm_class_smote, smote_train_data[['class']], plotit = T, main = 'ROC Curve using SVM & SMOTE')
+# print(roc_svm_smote)
+# Test Evaluation
+prob_svm_class_smote <- predict(model_svm_smote, newdata = test, type = 'prob')
+pred_svm_class_smote = predict(model_svm_smote, newdata = test)
+confusionMatrix(as.factor(pred_svm_class_smote), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_svm_smote <- roc.curve(pred_svm_class_smote, test[['class']], plotit = T, main = 'ROC Curve using SVM & SMOTE')
+print(roc_svm_smote)
+
+
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL WITH TUNE
+# 01. Generalized Linear Model
+#	A. Imbalanced Dataset
+#	B. Undersampling
+#	C. Oversampling
+#	D. Mixedsampling
+#	E. ROSE
+#	F. SMOTE
+# ============================================================================= #
+
+
+# Model Creation
+model_glm_imba <- train(form = class ~ ., data = imba_train_data, family = binomial(link = 'logit'), trControl = ctrl_tune, method = 'glm', preProcess = c("center", "scale"), metric = 'ROC')
+#exp(coef(model_glm_imba$finalModel))
+#varImp(model_glm_imba)
+# Train Evaluation
+# prob_glm_class_imba = predict(model_glm_imba, newdata = imba_train_data, type = 'prob')
+# pred_glm_class_imba = predict(model_glm_imba, newdata = imba_train_data)
+# confusionMatrix(as.factor(pred_glm_class_imba), as.factor(imba_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_glm_imba <- roc.curve(pred_glm_class_imba, imba_train_data[['class']], plotit = T, main = 'ROC Curve using GLM')
+# print(roc_glm_imba)
+# Test Evaluation
+prob_glm_class_imba = predict(model_glm_imba, newdata = test, type = 'prob')
+pred_glm_class_imba = predict(model_glm_imba, newdata = test)
+confusionMatrix(as.factor(pred_glm_class_imba), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_glm_imba <- roc.curve(pred_glm_class_imba, test[['class']], plotit = T, main = 'ROC Curve using GLM')
+print(roc_glm_imba)
+
+
+# Model Creation
+model_glm_under <- train(form = class ~ ., data = under_train_data, family = binomial(link = 'logit'), trControl = ctrl_tune, method = 'glm', preProcess = c("center", "scale"), metric = 'ROC')
+# Train Evaluation
+# prob_glm_class_under = predict(model_glm_under, newdata = under_train_data, type = 'prob')
+# pred_glm_class_under = predict(model_glm_under, newdata = under_train_data)
+# confusionMatrix(as.factor(pred_glm_class_under), as.factor(under_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_glm_under <- roc.curve(pred_glm_class_under, under_train_data[['class']], plotit = T, main = 'ROC Curve using GLM & Undersmaple')
+# print(roc_glm_under)
+# Test Evaluation
+prob_glm_class_under = predict(model_glm_under, newdata = test, type = 'prob')
+pred_glm_class_under = predict(model_glm_under, newdata = test)
+confusionMatrix(as.factor(pred_glm_class_under), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_glm_under <- roc.curve(pred_glm_class_under, test[['class']], plotit = T, main = 'ROC Curve using GLM & Undersmaple')
+print(roc_glm_under)
+
+
+# Model Creation
+model_glm_over <- train(form = class ~ ., data = over_train_data, family = binomial(link = 'logit'), trControl = ctrl_tune, method = 'glm', preProcess = c("center", "scale"), metric = 'ROC')
+# Train Evaluation
+# prob_glm_class_over = predict(model_glm_over, newdata = over_train_data, type = 'prob')
+# pred_glm_class_over = predict(model_glm_over, newdata = over_train_data)
+# confusionMatrix(as.factor(pred_glm_class_over), as.factor(over_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_glm_over <- roc.curve(pred_glm_class_over, over_train_data[['class']], plotit = T, main = 'ROC Curve using GLM & Oversmaple')
+# print(roc_glm_over)
+# Test Evaluation
+prob_glm_class_over = predict(model_glm_over, newdata = test, type = 'prob')
+pred_glm_class_over = predict(model_glm_over, newdata = test)
+confusionMatrix(as.factor(pred_glm_class_over), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_glm_over <- roc.curve(pred_glm_class_over, test[['class']], plotit = T, main = 'ROC Curve using GLM & Oversmaple')
+print(roc_glm_over)
+
+
+# Model Creation
+model_glm_ovun <- train(form = class ~ ., data = ovun_train_data, family = binomial(link = 'logit'), trControl = ctrl_tune, method = 'glm', preProcess = c("center", "scale"), metric = 'ROC')
+# Train Evaluation
+# prob_glm_class_ovun = predict(model_glm_ovun, newdata = ovun_train_data, type = 'prob')
+# pred_glm_class_ovun = predict(model_glm_ovun, newdata = ovun_train_data)
+# confusionMatrix(as.factor(pred_glm_class_ovun), as.factor(ovun_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_glm_under <- roc.curve(pred_glm_class_ovun, ovun_train_data[['class']], plotit = T, main = 'ROC Curve using GLM & Miexed-smaple')
+# print(roc_glm_under)
+# Test Evaluation
+prob_glm_class_ovun = predict(model_glm_ovun, newdata = test, type = 'prob')
+pred_glm_class_ovun = predict(model_glm_ovun, newdata = test)
+confusionMatrix(as.factor(pred_glm_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_glm_ovun <- roc.curve(pred_glm_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using GLM & Miexed-smaple')
+print(roc_glm_ovun)
+
+
+# Model Creation
+model_glm_rose <- train(form = class ~ ., data = rose_train_data, family = binomial(link = 'logit'), trControl = ctrl_tune, method = 'glm', preProcess = c("center", "scale"), metric = 'ROC')
+# Train Evaluation
+# prob_glm_class_rose = predict(model_glm_rose, newdata = rose_train_data, type = 'prob')
+# pred_glm_class_rose = predict(model_glm_rose, newdata = rose_train_data)
+# confusionMatrix(as.factor(pred_glm_class_rose), as.factor(rose_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_glm_rose <- roc.curve(pred_glm_class_rose, rose_train_data[['class']], plotit = T, main = 'ROC Curve using GLM & ROSE')
+# print(roc_glm_rose)
+# Test Evaluation
+prob_glm_class_rose = predict(model_glm_rose, newdata = test, type = 'prob')
+pred_glm_class_rose = predict(model_glm_rose, newdata = test)
+confusionMatrix(as.factor(pred_glm_class_rose), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_glm_rose <- roc.curve(pred_glm_class_rose, test[['class']], plotit = T, main = 'ROC Curve using GLM & ROSE')
+print(roc_glm_rose)
+
+
+# Model Creation
+model_glm_smote <- train(form = class ~ ., data = smote_train_data, family = binomial(link = 'logit'), trControl = ctrl_tune, method = 'glm', preProcess = c("center", "scale"), metric = 'ROC')
+# Train Evaluation
+# prob_glm_class_smote = predict(model_glm_smote, newdata = smote_train_data, type = 'prob')
+# pred_glm_class_smote = predict(model_glm_smote, newdata = smote_train_data)
+# confusionMatrix(as.factor(pred_glm_class_smote), as.factor(smote_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_glm_smote <- roc.curve(pred_glm_class_smote, smote_train_data[['class']], plotit = T, main = 'ROC Curve using GLM & SMOTE')
+# print(roc_glm_smote)
+# Test Evaluation
+prob_glm_class_smote = predict(model_glm_smote, newdata = test, type = 'prob')
+pred_glm_class_smote = predict(model_glm_smote, newdata = test)
+confusionMatrix(as.factor(pred_glm_class_smote), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_glm_smote <- roc.curve(pred_glm_class_smote, test[['class']], plotit = T, main = 'ROC Curve using GLM & SMOTE')
+print(roc_glm_smote)
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL
+# 02. Decision Tree - ctree, chaid, C5.0, xgbTree
+#	A. Imbalanced Dataset
+#	B. Undersampling
+#	C. Oversampling
+#	D. Mixedsampling
+#	E. ROSE
+#	F. SMOTE
+# ============================================================================= #
+
+
+# Model Creation
+model_dt_imba <- train(form = class ~ ., data = imba_train_data, method = 'ctree', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_dt_imba)
+# Train Evaluation
+# prob_dt_class_imba <- predict(model_dt_imba, newdata = imba_train_data, type = 'prob')
+# pred_dt_class_imba = predict(model_dt_imba, newdata = imba_train_data)
+# confusionMatrix(as.factor(pred_dt_class_imba), as.factor(imba_train_data[['class']]), positive = 'F', mode = 'everything')
+# # Error in ROC Calculation
+# roc_dt_imba <- roc.curve(pred_dt_class_imba, imba_train_data[['class']], plotit = T, main = 'ROC Curve using DT')
+# print(roc_dt_imba)
+# Test Evaluation
+prob_dt_class_imba <- predict(model_dt_imba, newdata = test, type = 'prob')
+pred_dt_class_imba = predict(model_dt_imba, newdata = test)
+confusionMatrix(as.factor(pred_dt_class_imba), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_dt_imba <- roc.curve(pred_dt_class_imba, test[['class']], plotit = T, main = 'ROC Curve using DT')
+print(roc_dt_imba)
+
+
+# Model Creation
+model_dt_under <- train(form = class ~ ., data = under_train_data, method = 'ctree', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_dt_under)
+# Train Evaluation
+# prob_dt_class_under <- predict(model_dt_under, newdata = under_train_data, type = 'prob')
+# pred_dt_class_under = predict(model_dt_under, newdata = under_train_data)
+# confusionMatrix(as.factor(pred_dt_class_under), as.factor(under_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_dt_under <- roc.curve(pred_dt_class_under, under_train_data[['class']], plotit = T, main = 'ROC Curve using DT & undersample')
+# print(roc_dt_under)
+# Test Evaluation
+prob_dt_class_under <- predict(model_dt_under, newdata = test, type = 'prob')
+pred_dt_class_under = predict(model_dt_under, newdata = test)
+confusionMatrix(as.factor(pred_dt_class_under), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_dt_under <- roc.curve(pred_dt_class_under, test[['class']], plotit = T, main = 'ROC Curve using DT & undersample')
+print(roc_dt_under)
+
+
+# Model Creation
+model_dt_over <- train(form = class ~ ., data = over_train_data, method = 'ctree', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_dt_over)
+# Train Evaluation
+# prob_dt_class_over <- predict(model_dt_over, newdata = over_train_data, type = 'prob')
+# pred_dt_class_over = predict(model_dt_over, newdata = over_train_data)
+# confusionMatrix(as.factor(pred_dt_class_over), as.factor(over_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_dt_over <- roc.curve(pred_dt_class_over, over_train_data[['class']], plotit = T, main = 'ROC Curve using DT & oversample')
+# print(roc_dt_over)
+# Test Evaluation
+prob_dt_class_over <- predict(model_dt_over, newdata = test, type = 'prob')
+pred_dt_class_over = predict(model_dt_over, newdata = test)
+confusionMatrix(as.factor(pred_dt_class_over), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_dt_over <- roc.curve(pred_dt_class_over, test[['class']], plotit = T, main = 'ROC Curve using DT & oversampling')
+print(roc_dt_over)
+
+
+# Model Creation
+model_dt_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'ctree', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_dt_ovun)
+# Train Evaluation
+# prob_dt_class_ovun <- predict(model_dt_ovun, newdata = ovun_train_data, type = 'prob')
+# pred_dt_class_ovun = predict(model_dt_ovun, newdata = ovun_train_data)
+# confusionMatrix(as.factor(pred_dt_class_ovun), as.factor(ovun_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_dt_ovun <- roc.curve(pred_dt_class_ovun, ovun_train_data[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+# print(roc_dt_ovun)
+# Test Evaluation
+prob_dt_class_ovun <- predict(model_dt_ovun, newdata = test, type = 'prob')
+pred_dt_class_ovun = predict(model_dt_ovun, newdata = test)
+confusionMatrix(as.factor(pred_dt_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_dt_ovun <- roc.curve(pred_dt_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+print(roc_dt_ovun)
+
+
+# Model Creation
+model_dt_rose <- train(form = class ~ ., data = rose_train_data, method = 'ctree', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_dt_rose)
+# Train Evaluation
+# prob_dt_class_rose <- predict(model_dt_rose, newdata = rose_train_data, type = 'prob')
+# pred_dt_class_rose = predict(model_dt_rose, newdata = rose_train_data)
+# confusionMatrix(as.factor(pred_dt_class_rose), as.factor(rose_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_dt_rose <- roc.curve(pred_dt_class_rose, rose_train_data[['class']], plotit = T, main = 'ROC Curve using DT & ROSE')
+# print(roc_dt_rose)
+# Test Evaluation
+prob_dt_class_rose <- predict(model_dt_rose, newdata = test, type = 'prob')
+pred_dt_class_rose = predict(model_dt_rose, newdata = test)
+confusionMatrix(as.factor(pred_dt_class_rose), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_dt_rose <- roc.curve(pred_dt_class_rose, test[['class']], plotit = T, main = 'ROC Curve using DT & ROSE')
+print(roc_dt_rose)
+
+
+# Model Creation
+model_dt_smote <- train(form = class ~ ., data = smote_train_data, method = 'ctree', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_dt_smote)
+# Train Evaluation
+# prob_dt_class_smote <- predict(model_dt_smote, newdata = smote_train_data, type = 'prob')
+# pred_dt_class_smote = predict(model_dt_smote, newdata = smote_train_data)
+# confusionMatrix(as.factor(pred_dt_class_smote), as.factor(smote_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_dt_smote <- roc.curve(pred_dt_class_smote, smote_train_data[['class']], plotit = T, main = 'ROC Curve using DT & SMOTE')
+# print(roc_dt_smote)
+# Test Evaluation
+prob_dt_class_smote <- predict(model_dt_smote, newdata = test, type = 'prob')
+pred_dt_class_smote = predict(model_dt_smote, newdata = test)
+confusionMatrix(as.factor(pred_dt_class_smote), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_dt_smote <- roc.curve(pred_dt_class_smote, test[['class']], plotit = T, main = 'ROC Curve using DT & SMOTE')
+print(roc_dt_smote)
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL
+# 03. Random Forest - ranger, rf
+#	A. Imbalanced Dataset
+#	B. Undersampling
+#	C. Oversampling
+#	D. Mixedsampling
+#	E. ROSE
+#	F. SMOTE
+# ============================================================================= #
+
+
+# Model Creation
+model_rf_imba <- train(form = class ~ ., data = imba_train_data, method = 'rf', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_rf_imba)
+# Train Evaluation
+# # prob_rf_class_imba <- predict(model_rf_imba, newdata = imba_train_data, type = 'prob')
+# pred_rf_class_imba = predict(model_rf_imba, newdata = imba_train_data)
+# confusionMatrix(as.factor(pred_rf_class_imba), as.factor(imba_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_rf_imba <- roc.curve(pred_rf_class_imba, imba_train_data[['class']], plotit = T, main = 'ROC Curve using RF')
+# print(roc_rf_imba)
+# Test Evaluation
+pred_rf_class_imba = predict(model_rf_imba, newdata = test)
+confusionMatrix(as.factor(pred_rf_class_imba), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_rf_imba <- roc.curve(pred_rf_class_imba, test[['class']], plotit = T, main = 'ROC Curve using RF')
+print(roc_rf_imba)
+
+
+# Model Creation
+model_rf_under <- train(form = class ~ ., data = under_train_data, method = 'rf', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_rf_under)
+# Train Evaluation
+# pred_rf_class_under = predict(model_rf_under, newdata = under_train_data)
+# confusionMatrix(as.factor(pred_rf_class_under), as.factor(under_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_rf_under <- roc.curve(pred_rf_class_under, under_train_data[['class']], plotit = T, main = 'ROC Curve using RF & undersample')
+# print(roc_rf_under)
+# Test Evaluation
+pred_rf_class_under = predict(model_rf_under, newdata = test)
+confusionMatrix(as.factor(pred_rf_class_under), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_rf_under <- roc.curve(pred_rf_class_under, test[['class']], plotit = T, main = 'ROC Curve using RF & undersample')
+print(roc_rf_under)
+
+
+# Model Creation
+model_rf_over <- train(form = class ~ ., data = over_train_data, method = 'rf', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_rf_over)
+# Train Evaluation
+# pred_rf_class_over = predict(model_rf_over, newdata = over_train_data)
+# confusionMatrix(as.factor(pred_rf_class_over), as.factor(over_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_rf_over <- roc.curve(pred_rf_class_over, over_train_data[['class']], plotit = T, main = 'ROC Curve using RF & oversample')
+# print(roc_rf_over)
+# Test Evaluation
+pred_rf_class_over = predict(model_rf_over, newdata = test)
+confusionMatrix(as.factor(pred_rf_class_over), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_rf_over <- roc.curve(pred_rf_class_over, test[['class']], plotit = T, main = 'ROC Curve using RF & oversample')
+print(roc_rf_over)
+
+
+# Model Creation
+model_rf_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'rf', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_rf_ovun)
+# Train Evaluation
+# pred_rf_class_ovun = predict(model_rf_ovun, newdata = ovun_train_data)
+# confusionMatrix(as.factor(pred_rf_class_ovun), as.factor(ovun_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_rf_ovun <- roc.curve(pred_rf_class_ovun, ovun_train_data[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+# print(roc_rf_ovun)
+# Test Evaluation
+pred_rf_class_ovun = predict(model_rf_ovun, newdata = test)
+confusionMatrix(as.factor(pred_rf_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_rf_ovun <- roc.curve(pred_rf_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+print(roc_rf_ovun)
+
+
+# Model Creation
+model_rf_rose <- train(form = class ~ ., data = rose_train_data, method = 'rf', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_rf_rose)
+# Train Evaluation
+# pred_rf_class_rose = predict(model_rf_rose, newdata = rose_train_data)
+# confusionMatrix(as.factor(pred_rf_class_rose), as.factor(rose_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_rf_rose <- roc.curve(pred_rf_class_rose, rose_train_data[['class']], plotit = T, main = 'ROC Curve using RF & ROSE')
+# print(roc_rf_rose)
+# Test Evaluation
+pred_rf_class_rose = predict(model_rf_rose, newdata = test)
+confusionMatrix(as.factor(pred_rf_class_rose), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_rf_rose <- roc.curve(pred_rf_class_rose, test[['class']], plotit = T, main = 'ROC Curve using RF & ROSE')
+print(roc_rf_rose)
+
+
+# Model Creation
+model_rf_smote <- train(form = class ~ ., data = smote_train_data, method = 'rf', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_rf_smote)
+# # Train Evaluation
+# pred_rf_class_smote = predict(model_rf_smote, newdata = smote_train_data)
+# confusionMatrix(as.factor(pred_rf_class_smote), as.factor(smote_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_rf_smote <- roc.curve(pred_rf_class_smote, smote_train_data[['class']], plotit = T, main = 'ROC Curve using RF & SMOTE')
+# print(roc_rf_smote)
+# Test Evaluation
+pred_rf_class_smote = predict(model_rf_smote, newdata = test)
+confusionMatrix(as.factor(pred_rf_class_smote), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_rf_smote <- roc.curve(pred_rf_class_smote, test[['class']], plotit = T, main = 'ROC Curve using RF & SMOTE')
+print(roc_rf_smote)
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL
+# 04. KNN
+#	A. Imbalanced Dataset
+#	B. Undersampling
+#	C. Oversampling
+#	D. Mixedsampling
+#	E. ROSE
+#	F. SMOTE
+# ============================================================================= #
+
+
+# Model Creation
+model_knn_imba <- train(form = class ~ ., data = imba_train_data, method = 'knn', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_knn_imba)
+# Train Evaluation
+# prob_knn_class_imba <- predict(model_knn_imba, newdata = imba_train_data, type = 'prob')
+# pred_knn_class_imba = predict(model_knn_imba, newdata = imba_train_data)
+# confusionMatrix(as.factor(pred_knn_class_imba), as.factor(imba_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_knn_imba <- roc.curve(pred_knn_class_imba, imba_train_data[['class']], plotit = T, main = 'ROC Curve using KNN')
+# print(roc_knn_imba)
+# Test Evaluation
+prob_knn_class_imba <- predict(model_knn_imba, newdata = test, type = 'prob')
+pred_knn_class_imba = predict(model_knn_imba, newdata = test)
+confusionMatrix(as.factor(pred_knn_class_imba), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_knn_imba <- roc.curve(pred_knn_class_imba, test[['class']], plotit = T, main = 'ROC Curve using KNN')
+print(roc_knn_imba)
+
+
+# Model Creation
+model_knn_under <- train(form = class ~ ., data = under_train_data, method = 'knn', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_knn_under)
+# Train Evaluation
+# prob_knn_class_under <- predict(model_knn_under, newdata = under_train_data, type = 'prob')
+# pred_knn_class_under = predict(model_knn_under, newdata = under_train_data)
+# confusionMatrix(as.factor(pred_knn_class_under), as.factor(under_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_knn_under <- roc.curve(pred_knn_class_under, under_train_data[['class']], plotit = T, main = 'ROC Curve using KNN and undersample')
+# print(roc_knn_under)
+# Test Evaluation
+prob_knn_class_under <- predict(model_knn_under, newdata = test, type = 'prob')
+pred_knn_class_under = predict(model_knn_under, newdata = test)
+confusionMatrix(as.factor(pred_knn_class_under), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_knn_under <- roc.curve(pred_knn_class_under, test[['class']], plotit = T, main = 'ROC Curve using KNN and undersample')
+print(roc_knn_under)
+
+
+# Model Creation
+model_knn_over <- train(form = class ~ ., data = over_train_data, method = 'knn', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_knn_over)
+# Train Evaluation
+# prob_knn_class_over <- predict(model_knn_over, newdata = over_train_data, type = 'prob')
+# pred_knn_class_over = predict(model_knn_over, newdata = over_train_data)
+# confusionMatrix(as.factor(pred_knn_class_over), as.factor(over_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_knn_over <- roc.curve(pred_knn_class_over, over_train_data[['class']], plotit = T, main = 'ROC Curve using KNN and oversample')
+# print(roc_knn_over)
+# Test Evaluation
+prob_knn_class_over <- predict(model_knn_over, newdata = test, type = 'prob')
+pred_knn_class_over = predict(model_knn_over, newdata = test)
+confusionMatrix(as.factor(pred_knn_class_over), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_knn_over <- roc.curve(pred_knn_class_over, test[['class']], plotit = T, main = 'ROC Curve using KNN and oversample')
+print(roc_knn_over)
+
+
+# Model Creation
+model_knn_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'ctree', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_knn_ovun)
+# Train Evaluation
+# prob_knn_class_ovun <- predict(model_knn_ovun, newdata = ovun_train_data, type = 'prob')
+# pred_knn_class_ovun = predict(model_knn_ovun, newdata = ovun_train_data)
+# confusionMatrix(as.factor(pred_knn_class_ovun), as.factor(ovun_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_knn_ovun <- roc.curve(pred_knn_class_ovun, ovun_train_data[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+# print(roc_knn_ovun)
+# Test Evaluation
+prob_knn_class_ovun <- predict(model_knn_ovun, newdata = test, type = 'prob')
+pred_knn_class_ovun = predict(model_knn_ovun, newdata = test)
+confusionMatrix(as.factor(pred_knn_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_knn_ovun <- roc.curve(pred_knn_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+print(roc_knn_ovun)
+
+
+# Model Creation
+model_knn_rose <- train(form = class ~ ., data = rose_train_data, method = 'knn', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_knn_rose)
+# Train Evaluation
+# prob_knn_class_rose <- predict(model_knn_rose, newdata = rose_train_data, type = 'prob')
+# pred_knn_class_rose = predict(model_knn_rose, newdata = rose_train_data)
+# confusionMatrix(as.factor(pred_knn_class_rose), as.factor(rose_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_knn_rose <- roc.curve(pred_knn_class_rose, rose_train_data[['class']], plotit = T, main = 'ROC Curve using KNN and ROSE')
+# print(roc_knn_rose)
+# Test Evaluation
+prob_knn_class_rose <- predict(model_knn_rose, newdata = test, type = 'prob')
+pred_knn_class_rose = predict(model_knn_rose, newdata = test)
+confusionMatrix(as.factor(pred_knn_class_rose), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_knn_rose <- roc.curve(pred_knn_class_rose, test[['class']], plotit = T, main = 'ROC Curve using KNN and ROSE')
+print(roc_knn_rose)
+
+
+# Model Creation
+model_knn_smote <- train(form = class ~ ., data = smote_train_data, method = 'knn', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_knn_smote)
+# Train Evaluation
+# prob_knn_class_smote <- predict(model_knn_smote, newdata = smote_train_data, type = 'prob')
+# pred_knn_class_smote = predict(model_knn_smote, newdata = smote_train_data)
+# confusionMatrix(as.factor(pred_knn_class_smote), as.factor(smote_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_knn_smote <- roc.curve(pred_knn_class_smote, smote_train_data[['class']], plotit = T, main = 'ROC Curve using KNN and SMOTE')
+# print(roc_knn_smote)
+# Test Evaluation
+prob_knn_class_smote <- predict(model_knn_smote, newdata = test, type = 'prob')
+pred_knn_class_smote = predict(model_knn_smote, newdata = test)
+confusionMatrix(as.factor(pred_knn_class_smote), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_knn_smote <- roc.curve(pred_knn_class_smote, test[['class']], plotit = T, main = 'ROC Curve using KNN and SMOTE')
+print(roc_knn_smote)
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL
+# 05. Naive Bayes
+#	A. Imbalanced Dataset
+#	B. Undersampling
+#	C. Oversampling
+#	D. Mixedsampling
+#	E. ROSE
+#	F. SMOTE
+# ============================================================================= #
+
+
+# Model Creation
+model_nb_imba <- train(form = class ~ ., data = imba_train_data, method = 'naive_bayes', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_nb_imba)
+# Train Evaluation
+# prob_nb_class_imba <- predict(model_nb_imba, newdata = imba_train_data, type = 'prob')
+# pred_nb_class_imba = predict(model_nb_imba, newdata = imba_train_data)
+# confusionMatrix(as.factor(pred_nb_class_imba), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+# roc_nb_imba <- roc.curve(pred_nb_class_imba, imba_train_data[['class']], plotit = T, main = 'ROC Curve using NB')
+# print(roc_nb_imba)
+# Test Evaluation
+prob_nb_class_imba <- predict(model_nb_imba, newdata = test, type = 'prob')
+pred_nb_class_imba = predict(model_nb_imba, newdata = test)
+confusionMatrix(as.factor(pred_nb_class_imba), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_nb_imba <- roc.curve(pred_nb_class_imba, test[['class']], plotit = T, main = 'ROC Curve using NB')
+print(roc_nb_imba)
+
+
+# Model Creation
+model_nb_under <- train(form = class ~ ., data = under_train_data, method = 'naive_bayes', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_nb_under)
+# Train Evaluation
+# prob_nb_class_under <- predict(model_nb_under, newdata = under_train_data, type = 'prob')
+# pred_nb_class_under = predict(model_nb_under, newdata = under_train_data)
+# confusionMatrix(as.factor(pred_nb_class_under), as.factor(under_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_nb_under <- roc.curve(pred_nb_class_under, under_train_data[['class']], plotit = T, main = 'ROC Curve using NB & undersample')
+# print(roc_nb_under)
+# Test Evaluation
+prob_nb_class_under <- predict(model_nb_under, newdata = test, type = 'prob')
+pred_nb_class_under = predict(model_nb_under, newdata = test)
+confusionMatrix(as.factor(pred_nb_class_under), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_nb_under <- roc.curve(pred_nb_class_under, test[['class']], plotit = T, main = 'ROC Curve using NB & undersample')
+print(roc_nb_under)
+
+
+# Model Creation
+model_nb_over <- train(form = class ~ ., data = over_train_data, method = 'naive_bayes', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_nb_over)
+# Train Evaluation
+# prob_nb_class_over <- predict(model_nb_over, newdata = over_train_data, type = 'prob')
+# pred_nb_class_over = predict(model_nb_over, newdata = over_train_data)
+# confusionMatrix(as.factor(pred_nb_class_over), as.factor(over_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_nb_over <- roc.curve(pred_nb_class_over, over_train_data[['class']], plotit = T, main = 'ROC Curve using NB & oversample')
+# print(roc_nb_over)
+# Test Evaluation
+prob_nb_class_over <- predict(model_nb_over, newdata = test, type = 'prob')
+pred_nb_class_over = predict(model_nb_over, newdata = test)
+confusionMatrix(as.factor(pred_nb_class_over), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_nb_over <- roc.curve(pred_nb_class_over, test[['class']], plotit = T, main = 'ROC Curve using NB & oversample')
+print(roc_nb_over)
+
+
+# Model Creation
+model_nb_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'ctree', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_nb_ovun)
+# Train Evaluation
+# prob_nb_class_ovun <- predict(model_nb_ovun, newdata = ovun_train_data, type = 'prob')
+# pred_nb_class_ovun = predict(model_nb_ovun, newdata = ovun_train_data)
+# confusionMatrix(as.factor(pred_nb_class_ovun), as.factor(ovun_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_nb_ovun <- roc.curve(pred_nb_class_ovun, ovun_train_data[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+# print(roc_nb_ovun)
+# Test Evaluation
+prob_nb_class_ovun <- predict(model_nb_ovun, newdata = test, type = 'prob')
+pred_nb_class_ovun = predict(model_nb_ovun, newdata = test)
+confusionMatrix(as.factor(pred_nb_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_nb_ovun <- roc.curve(pred_nb_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+print(roc_nb_ovun)
+
+
+# Model Creation
+model_nb_rose <- train(form = class ~ ., data = rose_train_data, method = 'naive_bayes', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_nb_rose)
+# Train Evaluation
+# prob_nb_class_rose <- predict(model_nb_rose, newdata = rose_train_data, type = 'prob')
+# pred_nb_class_rose = predict(model_nb_rose, newdata = rose_train_data)
+# confusionMatrix(as.factor(pred_nb_class_rose), as.factor(rose_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_nb_rose <- roc.curve(pred_nb_class_rose, rose_train_data[['class']], plotit = T, main = 'ROC Curve using NB & ROSE')
+# print(roc_nb_rose)
+# Test Evaluation
+prob_nb_class_rose <- predict(model_nb_rose, newdata = test, type = 'prob')
+pred_nb_class_rose = predict(model_nb_rose, newdata = test)
+confusionMatrix(as.factor(pred_nb_class_rose), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_nb_rose <- roc.curve(pred_nb_class_rose, test[['class']], plotit = T, main = 'ROC Curve using NB & ROSE')
+print(roc_nb_rose)
+
+
+# Model Creation
+model_nb_smote <- train(form = class ~ ., data = smote_train_data, method = 'naive_bayes', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_nb_smote)
+# Train Evaluation
+# prob_nb_class_smote <- predict(model_nb_smote, newdata = smote_train_data, type = 'prob')
+# pred_nb_class_smote = predict(model_nb_smote, newdata = smote_train_data)
+# confusionMatrix(as.factor(pred_nb_class_smote), as.factor(smote_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_nb_smote <- roc.curve(pred_nb_class_smote, smote_train_data[['class']], plotit = T, main = 'ROC Curve using NB & SMOTE')
+# print(roc_nb_smote)
+# Test Evaluation
+prob_nb_class_smote <- predict(model_nb_smote, newdata = test, type = 'prob')
+pred_nb_class_smote = predict(model_nb_smote, newdata = test)
+confusionMatrix(as.factor(pred_nb_class_smote), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_nb_smote <- roc.curve(pred_nb_class_smote, test[['class']], plotit = T, main = 'ROC Curve using NB & SMOTE')
+print(roc_nb_smote)
+
+
+# ============================================================================= #
+# CLASSIFICATION MODEL
+# 06. SVM
+#	A. Imbalanced Dataset
+#	B. Undersampling
+#	C. Oversampling
+#	D. Mixedsampling
+#	E. ROSE
+#	F. SMOTE
+# ============================================================================= #
+
+
+# Model Creation
+model_svm_imba <- train(form = class ~ ., data = imba_train_data, method = 'svmRadial', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
+plot(model_svm_imba)
+# Train Evaluation
+# prob_svm_class_imba <- predict(model_svm_imba, newdata = imba_train_data, type = 'prob')
+# pred_svm_class_imba = predict(model_svm_imba, newdata = imba_train_data)
+# confusionMatrix(as.factor(pred_svm_class_imba), as.factor(imba_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_svm_imba <- roc.curve(pred_svm_class_imba, imba_train_data[['class']], plotit = T, main = 'ROC Curve using SVM')
+# print(roc_svm_imba)
+# Test Evaluation
+prob_svm_class_imba <- predict(model_svm_imba, newdata = test, type = 'prob')
+pred_svm_class_imba = predict(model_svm_imba, newdata = test)
+confusionMatrix(as.factor(pred_svm_class_imba), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_svm_imba <- roc.curve(pred_svm_class_imba, test[['class']], plotit = T, main = 'ROC Curve using SVM')
+print(roc_svm_imba)
+
+
+# Model Creation
+model_svm_under <- train(form = class ~ ., data = under_train_data, method = 'svmRadial', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
 plot(model_svm_under)
 # Train Evaluation
-prob_svm_class_under <- predict(model_svm_under, newdata = train, type = 'prob')
-pred_svm_class_under = predict(model_svm_under, newdata = train)
-confusionMatrix(table(pred_svm_class_under, train[['class']]), positive = 'F', mode = 'everything')
-roc_svm_under <- roc.curve(pred_svm_class_under, train[['class']], plotit = T, main = 'ROC Curve using SVM & undersample')
-print(roc_svm_under)
-# Test Evaluation
-# prob_svm_class_under <- predict(model_svm_under, newdata = test, type = 'prob')
-# pred_svm_class_under = predict(model_svm_under, newdata = test)
-# confusionMatrix(table(pred_svm_class_under, test[['class']]), positive = 'F', mode = 'everything')
-# roc_svm_under <- roc.curve(pred_svm_class_under, test[['class']], plotit = T, main = 'ROC Curve using SVM & undersample')
+# prob_svm_class_under <- predict(model_svm_under, newdata = under_train_data, type = 'prob')
+# pred_svm_class_under = predict(model_svm_under, newdata = under_train_data)
+# confusionMatrix(as.factor(pred_svm_class_under), as.factor(under_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_svm_under <- roc.curve(pred_svm_class_under, under_train_data[['class']], plotit = T, main = 'ROC Curve using SVM & undersample')
 # print(roc_svm_under)
+# Test Evaluation
+prob_svm_class_under <- predict(model_svm_under, newdata = test, type = 'prob')
+pred_svm_class_under = predict(model_svm_under, newdata = test)
+confusionMatrix(as.factor(pred_svm_class_under), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_svm_under <- roc.curve(pred_svm_class_under, test[['class']], plotit = T, main = 'ROC Curve using SVM & undersample')
+print(roc_svm_under)
 
-set.seed(642)
+
 # Model Creation
-model_svm_over <- train(form = class ~ ., data = train, method = 'svmRadial', tuneLength = 5, trControl = ctrl_over, preProcess = c("center", "scale"))
+model_svm_over <- train(form = class ~ ., data = over_train_data, method = 'svmRadial', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
 plot(model_svm_over)
 # Train Evaluation
-prob_svm_class_over <- predict(model_svm_over, newdata = train, type = 'prob')
-pred_svm_class_over = predict(model_svm_over, newdata = train)
-confusionMatrix(table(pred_svm_class_over, train[['class']]), positive = 'F', mode = 'everything')
-roc_svm_over <- roc.curve(pred_svm_class_over, train[['class']], plotit = T, main = 'ROC Curve using SVM & oversample')
-print(roc_svm_over)
-# Test Evaluation
-# prob_svm_class_over <- predict(model_svm_over, newdata = test, type = 'prob')
-# pred_svm_class_over = predict(model_svm_over, newdata = test)
-# confusionMatrix(table(pred_svm_class_over, test[['class']]), positive = 'F', mode = 'everything')
-# roc_svm_over <- roc.curve(pred_svm_class_over, test[['class']], plotit = T, main = 'ROC Curve using SVM & oversample')
+# prob_svm_class_over <- predict(model_svm_over, newdata = over_train_data, type = 'prob')
+# pred_svm_class_over = predict(model_svm_over, newdata = over_train_data)
+# confusionMatrix(as.factor(pred_svm_class_over), as.factor(over_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_svm_over <- roc.curve(pred_svm_class_over, over_train_data[['class']], plotit = T, main = 'ROC Curve using SVM & oversample')
 # print(roc_svm_over)
+# Test Evaluation
+prob_svm_class_over <- predict(model_svm_over, newdata = test, type = 'prob')
+pred_svm_class_over = predict(model_svm_over, newdata = test)
+confusionMatrix(as.factor(pred_svm_class_over), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_svm_over <- roc.curve(pred_svm_class_over, test[['class']], plotit = T, main = 'ROC Curve using SVM & oversample')
+print(roc_svm_over)
 
-set.seed(642)
+
 # Model Creation
-model_svm_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'ctree', tuneLength = 5, trControl = ctrl, preProcess = c("center", "scale"))
+model_svm_ovun <- train(form = class ~ ., data = ovun_train_data, method = 'ctree', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
 plot(model_svm_ovun)
 # Train Evaluation
-prob_svm_class_ovun <- predict(model_svm_ovun, newdata = train, type = 'prob')
-pred_svm_class_ovun = predict(model_svm_ovun, newdata = train)
-confusionMatrix(as.factor(pred_svm_class_ovun), as.factor(train[['class']]), positive = 'F', mode = 'everything')
-roc_svm_ovun <- roc.curve(pred_svm_class_ovun, train[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
-print(roc_svm_ovun)
-# Test Evaluation
-# prob_svm_class_ovun <- predict(model_svm_ovun, newdata = test, type = 'prob')
-# pred_svm_class_ovun = predict(model_svm_ovun, newdata = test)
-# confusionMatrix(as.factor(pred_svm_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
-# roc_svm_under <- roc.curve(pred_svm_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+# prob_svm_class_ovun <- predict(model_svm_ovun, newdata = ovun_train_data, type = 'prob')
+# pred_svm_class_ovun = predict(model_svm_ovun, newdata = ovun_train_data)
+# confusionMatrix(as.factor(pred_svm_class_ovun), as.factor(ovun_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_svm_ovun <- roc.curve(pred_svm_class_ovun, ovun_train_data[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
 # print(roc_svm_ovun)
+# Test Evaluation
+prob_svm_class_ovun <- predict(model_svm_ovun, newdata = test, type = 'prob')
+pred_svm_class_ovun = predict(model_svm_ovun, newdata = test)
+confusionMatrix(as.factor(pred_svm_class_ovun), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_svm_ovun <- roc.curve(pred_svm_class_ovun, test[['class']], plotit = T, main = 'ROC Curve using DT & mixed-sample')
+print(roc_svm_ovun)
 
-set.seed(642)
+
 # Model Creation
-model_svm_rose <- train(form = class ~ ., data = train, method = 'svmRadial', tuneLength = 5, trControl = ctrl_rose, preProcess = c("center", "scale"))
+model_svm_rose <- train(form = class ~ ., data = rose_train_data, method = 'svmRadial', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
 plot(model_svm_rose)
 # Train Evaluation
-prob_svm_class_rose <- predict(model_svm_rose, newdata = train, type = 'prob')
-pred_svm_class_rose = predict(model_svm_rose, newdata = train)
-confusionMatrix(table(pred_svm_class_rose, train[['class']]), positive = 'F', mode = 'everything')
-roc_svm_rose <- roc.curve(pred_svm_class_rose, train[['class']], plotit = T, main = 'ROC Curve using SVM & ROSE')
-print(roc_svm_rose)
-# Test Evaluation
-# prob_svm_class_rose <- predict(model_svm_rose, newdata = test, type = 'prob')
-# pred_svm_class_rose = predict(model_svm_rose, newdata = test)
-# confusionMatrix(table(pred_svm_class_rose, test[['class']]), positive = 'F', mode = 'everything')
-# roc_svm_rose <- roc.curve(pred_svm_class_rose, test[['class']], plotit = T, main = 'ROC Curve using SVM & ROSE')
+# prob_svm_class_rose <- predict(model_svm_rose, newdata = rose_train_data, type = 'prob')
+# pred_svm_class_rose = predict(model_svm_rose, newdata = rose_train_data)
+# confusionMatrix(as.factor(pred_svm_class_rose), as.factor(rose_train_data[['class']]), positive = 'F', mode = 'everything')
+# roc_svm_rose <- roc.curve(pred_svm_class_rose, rose_train_data[['class']], plotit = T, main = 'ROC Curve using SVM & ROSE')
 # print(roc_svm_rose)
+# Test Evaluation
+prob_svm_class_rose <- predict(model_svm_rose, newdata = test, type = 'prob')
+pred_svm_class_rose = predict(model_svm_rose, newdata = test)
+confusionMatrix(as.factor(pred_svm_class_rose), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_svm_rose <- roc.curve(pred_svm_class_rose, test[['class']], plotit = T, main = 'ROC Curve using SVM & ROSE')
+print(roc_svm_rose)
 
-set.seed(642)
+
 # Model Creation
-model_svm_smote <- train(form = class ~ ., data = train, method = 'svmRadial', tuneLength = 5, trControl = ctrl_smote, preProcess = c("center", "scale"))
+model_svm_smote <- train(form = class ~ ., data = smote_train_data, method = 'svmRadial', tuneLength = 5, trControl = ctrl_tune, preProcess = c("center", "scale"), metric = 'ROC')
 plot(model_svm_smote)
 # Train Evaluation
-prob_svm_class_smote <- predict(model_svm_smote, newdata = train, type = 'prob')
-pred_svm_class_smote = predict(model_svm_smote, newdata = train)
-confusionMatrix(table(pred_svm_class_smote, train[['class']]), positive = 'F', mode = 'everything')
-roc_svm_smote <- roc.curve(pred_svm_class_smote, train[['class']], plotit = T, main = 'ROC Curve using SVM & SMOTE')
-print(roc_svm_smote)
-# Test Evaluation
-# prob_svm_class_smote <- predict(model_svm_smote, newdata = test, type = 'prob')
-# pred_svm_class_smote = predict(model_svm_smote, newdata = test)
-# confusionMatrix(table(pred_svm_class_smote, test[['class']]), positive = 'F', mode = 'everything')
-# roc_svm_smote <- roc.curve(pred_svm_class_smote, test[['class']], plotit = T, main = 'ROC Curve using SVM & SMOTE')
+# prob_svm_class_smote <- predict(model_svm_smote, newdata = smote_train_data, type = 'prob')
+# pred_svm_class_smote = predict(model_svm_smote, newdata = smote_train_data)
+# confusionMatrix(as.factor(pred_svm_class_smote), as.factor(smote_train_data), positive = 'F', mode = 'everything')
+# roc_svm_smote <- roc.curve(pred_svm_class_smote, smote_train_data[['class']], plotit = T, main = 'ROC Curve using SVM & SMOTE')
 # print(roc_svm_smote)
+# Test Evaluation
+prob_svm_class_smote <- predict(model_svm_smote, newdata = test, type = 'prob')
+pred_svm_class_smote = predict(model_svm_smote, newdata = test)
+confusionMatrix(as.factor(pred_svm_class_smote), as.factor(test[['class']]), positive = 'F', mode = 'everything')
+roc_svm_smote <- roc.curve(pred_svm_class_smote, test[['class']], plotit = T, main = 'ROC Curve using SVM & SMOTE')
+print(roc_svm_smote)
+
+
+
+
+
+
+
 
 
 # ============================================================================= #
 # MODEL COMPARISON FINAL
 # ============================================================================= #
 
-# Compare model performances using resample()
-models_compare <- resamples(list(GLM = model_glm, DT = model_dt, RF = model_rf, KNN = model_knn, NB = model_nb, MARS = model_mars, NN = model_nn, SVM = model_svm))
-# Summary of the models performances
-summary(models_compare)
-# Draw box plots to compare models
-scales <- list(x=list(relation="free"), y=list(relation="free"))
-bwplot(models_compare, scales=scales)
+# # Compare model performances using resample()
+# models_compare <- resamples(list(GLM = model_glm, DT = model_dt, RF = model_rf, KNN = model_knn, NB = model_nb, MARS = model_mars, NN = model_nn, SVM = model_svm))
+# # Summary of the models performances
+# summary(models_compare)
+# # Draw box plots to compare models
+# scales <- list(x=list(relation="free"), y=list(relation="free"))
+# bwplot(models_compare, scales=scales)
+
+
+
