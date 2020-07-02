@@ -162,7 +162,7 @@ cat("Number of feature removed after NA removal with threshold ",NULL_THRESHOLD*
 
 # ============================================================================= #
 # FEATURE REDUCTION
-# 02. Near Zero Variance Removal
+# - Near Zero Variance Removal
 # ============================================================================= #
 
 train_variance_removal <- train_null_removal[-nearZeroVar(train_null_removal)]
@@ -171,8 +171,8 @@ cat("Number of feature removed after near zero variance is :", length(train_null
 
 # ============================================================================= #
 # OUTLIER HANDLING
-# 01. Replace by 3s boundary
-# - EDA after feature reduction and outlier handling
+# - Replace by 3s boundary
+# 	- EDA after feature reduction and outlier handling
 # ============================================================================= #
 
 train_outlier_3s <- apply(train_variance_removal, 2, impute_outlier_3s)
@@ -183,8 +183,8 @@ outlier_analysis(train_outlier_3s, 'train set after imputating outlier with 3s b
 
 # ============================================================================= #
 # OUTLIER HANDLING
-# 01. Replace by NAs
-# - EDA after feature reduction and outlier handling
+# - Replace by NAs
+# 	- EDA after feature reduction and outlier handling
 # ============================================================================= #
 
 train_outlier_NA <- apply(train_variance_removal, 2, impute_outlier_NA)
@@ -195,7 +195,7 @@ outlier_analysis(train_outlier_NA, 'train set after imputating outlier with NA')
 
 # ============================================================================= #
 # NA HANDLING
-# 01. KNN imputation
+# - KNN imputation
 # ============================================================================= #
 
 train_knn_imputation <- KNN_imputation(train_outlier_NA)
@@ -204,7 +204,7 @@ missing_value_analysis(train_knn_imputation, 'train set after KNN imputation')
 
 # ============================================================================= #
 # FEATURE SELECTION AND REDUCTION
-# 01. BORUTA on KNN imputed train set
+# - BORUTA on KNN imputed train set
 # ============================================================================= #
 
 set.seed(111)
@@ -227,12 +227,9 @@ summarytools::view(dfSummary(train_FR_boruta_knn))
 
 # ============================================================================= #
 # FINAL TRAIN DATASET
-# 01. Imbalanced
-# 02. Under-sampled
-# 03. Over-sampled
-# 04. Mixed-sampled
-# 05. ROSE
-# 06. SMOTE
+# - Imbalanced
+# - ROSE
+# - SMOTE
 # ============================================================================= #
 
 imba_train_data <- train_FR_boruta_knn
@@ -254,14 +251,14 @@ dfSummary(smote_train_data$class)
 # - Bootstrap
 # ============================================================================= #
 
-ctrl_tune <- trainControl(method = 'boot', number = 20, classProbs = TRUE, summaryFunction = twoClassSummary, search = 'grid')	# search = grid addition
+ctrl_tune <- trainControl(method = 'boot', number = 20, classProbs = TRUE, summaryFunction = twoClassSummary, search = 'grid')
 
 
 # ============================================================================= #
 # PREPROCESS: TEST DATASET
-# 01. Same number of features as Train after variance removal (Mirroring the features)
-# 02. Outlier detection and imputation
-# 03. KNN Imputation using train
+# - Same number of features as Train after variance removal (Mirroring the features)
+# - Outlier detection and handling
+# - KNN Imputation on test using train
 # ============================================================================= #
 
 class <- semcon_test_data$class
@@ -276,13 +273,10 @@ class_distribution(test, 'Test')
 
 # ============================================================================= #
 # CLASSIFICATION MODEL
-# 03. Random Forest - rf
-#	A. Imbalanced Dataset
-#	B. Undersampling
-#	C. Oversampling
-#	D. Mixedsampling
-#	E. ROSE
-#	F. SMOTE
+# - Random Forest using rf
+#	- Imbalanced Dataset
+#	- ROSE
+#	- SMOTE
 # ============================================================================= #
 
 # Model Creation
