@@ -226,7 +226,7 @@ summarytools::view(dfSummary(train_FR_boruta_knn))
 
 
 # ============================================================================= #
-# FINAL TRAIN DATASET
+# BALANCING METHODS
 # - Imbalanced
 # - ROSE
 # - SMOTE
@@ -247,8 +247,9 @@ dfSummary(smote_train_data$class)
 
 
 # ============================================================================= #
-# SAMPLING TECHNIQUES
+# PARAMETER OPTIMZATION
 # - Bootstrap
+# - grid search
 # ============================================================================= #
 
 ctrl_tune <- trainControl(method = 'boot', number = 20, classProbs = TRUE, summaryFunction = twoClassSummary, search = 'grid')
